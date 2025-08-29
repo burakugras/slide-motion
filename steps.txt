@@ -1,0 +1,15 @@
+1 - (() => { })();
+
+2 - init() fonksiyonu oluştur.
+
+3 - init fonksiyonunun içinde sırasıyla buildHTML, buildCSS ve fetchProducts fonksiyonlarını oluştur.
+
+4 - fetchProducts fonksiyonu içerisinde renderProducts fonksiyonunu oluştur.
+
+5 - renderProducts içerisinde gerekli render kodlarını yaz.
+
+6 - render kodlarını yazdıktan sonra setEvents() fonksiyonunu yaz ve renderin en sonunda çağır.
+
+7 - loadFavorites ve saveFavorites fonksiyonlarını yaz.
+
+8 - aynı şekilde slideScreen fonksiyonunu yaz. slideScreen'den önce kullanacağın getScrollAmount metodunu da yaz.
