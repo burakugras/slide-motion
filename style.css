@@ -5,6 +5,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .slider-container {
@@ -17,7 +19,7 @@ body {
 
 .container {
     width: 85%;
-    max-width: 650px;
+    max-width: 700px;
     position: relative;
     padding: 20px;
     margin: 0 auto;
@@ -33,11 +35,14 @@ body {
 
 .slider {
     background-color: azure;
-    padding: 10px 0;
+    padding: 40px 0;    /*aşağıdaki videonun görünmesini sağlayacak */
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     scrollbar-width: none;
+    height: 100vh;
+    margin-bottom: 50px;
+    
 }
 
 .video-card {
@@ -53,6 +58,8 @@ body {
     overflow: hidden;
     border: 3px solid transparent;
     transition: border-color 0.3s ease;
+    height: 95vh;
+    margin-bottom: 25px;
 }
 
 .video-player-container {
