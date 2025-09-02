@@ -15,6 +15,9 @@ body {
     padding: 20px 0;
     position: relative;
     overflow: hidden;
+    height: 100vh;
+    display: flex;
+    align-items: center;
 }
 
 .container {
@@ -24,6 +27,8 @@ body {
     padding: 20px;
     margin: 0 auto;
     background-color: bisque;
+    height: 80vh;
+    box-sizing: border-box;
 }
 
 .slider-wrapper {
@@ -31,24 +36,26 @@ body {
     overflow: hidden;
     padding: 0 60px;
     background-color: brown;
+    height: 100%;
 }
 
 .slider {
     background-color: azure;
-    padding: 40px 0;    /*aşağıdaki videonun görünmesini sağlayacak */
+    padding: 30px 0;
+    /*aşağıdaki videonun görünmesini sağlayacak */
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     scrollbar-width: none;
-    height: 100vh;
+    height: calc(100% - 60px);
     margin-bottom: 50px;
-    
+
 }
 
 .video-card {
     position: relative;
     height: auto;
-    flex: 0 0 auto;
+    /* flex: 0 0 auto; */
     background-color: gray;
     box-sizing: border-box;
     scroll-snap-align: start;
@@ -58,8 +65,19 @@ body {
     overflow: hidden;
     border: 3px solid transparent;
     transition: border-color 0.3s ease;
-    height: 95vh;
-    margin-bottom: 25px;
+    height: 70vh;
+    margin-bottom: 8%;
+    border: 4px solid black;
+}
+
+.video-card:first-child {
+    margin-top: 0;
+    /* İlk kartın üst margin'ini kaldır */
+}
+
+.video-card:last-child {
+    margin-bottom: 0;
+    /* Son kartın alt margin'ini kaldır */
 }
 
 .video-player-container {
@@ -77,4 +95,42 @@ body {
     height: 100%;
     object-fit: cover;
     box-sizing: border-box;
+}
+
+.btn {
+    padding: 5px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+}
+
+.button-container {
+    position: absolute;
+    height: calc(75% - 25px);
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 5;
+    justify-content: space-between;
+    padding: 45px 55px;
+    box-sizing: border-box;
+}
+
+.top-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bottom-container {
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+    align-items: center;
 }
