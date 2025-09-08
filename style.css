@@ -51,7 +51,6 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 3px solid transparent;
     transition: border-color 0.3s ease;
     height: 100vh;
     margin: 0;
@@ -82,7 +81,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: black;
+    /* background-color: black; */
     min-width: 2.4rem;
     min-height: 2.4rem;
     flex-shrink: 0;
@@ -108,9 +107,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: black;
+    /* background-color: black; */
     min-height: 3rem;
     flex-shrink: 0;
+}
+
+.info-container .info{
+    border: 1px solid salmon;
+}
+
+.bottom-container .btn,
+.top-container .btn{
+    border: 1px solid salmon;
 }
 
 .info-container {
@@ -138,7 +146,10 @@ body {
     align-items: center;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1281px) {
+    .container{
+        width: 50%;
+    }
     .btn {
         width: 2.3rem;
         height: 2.3rem;
