@@ -1,3 +1,5 @@
+import { url } from "./environment";
+
 (() => {
     if (window.location.pathname !== "/") {
         console.log("Yanlış sayfadasınız.");
@@ -57,8 +59,244 @@
 
     const buildCSS = () => {
         const css = `
-            
+            body {
+                margin: 0;
+                padding: 0;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                overflow: hidden;
+                background-color: gray;
+            }
+
+            .slider-container {
+                width: 100%;
+                height: 100vh;
+                position: relative;
+                overflow: hidden;
+                display: flex;
+                align-items: center;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 700px;
+                position: relative;
+                margin: 0 auto;
+                height: 100vh;
+                box-sizing: border-box;
+            }
+
+            .slider-wrapper {
+                position: relative;
+                overflow: hidden;
+                height: 100%;
+            }
+
+            .slider {
+                overflow-y: auto;
+                scroll-snap-type: y mandatory;
+                scroll-behavior: smooth;
+                scrollbar-width: none;
+                height: 100%;
+            }
+
+            .slider::-webkit-scrollbar {
+                display: none;
+            }
+
+            .video-card {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                transition: border-color 0.3s ease;
+                height: 100vh;
+                margin: 0;
+                scroll-snap-align: start;
+                background-color: rgb(33, 85, 145);
+            }
+
+            .video-player-container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            .video-player {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                box-sizing: border-box;
+            }
+
+            .btn {
+                padding: 5px;
+                width: 2.4rem;
+                height: 2.4rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                /* background-color: black; */
+                min-width: 2.4rem;
+                min-height: 2.4rem;
+                flex-shrink: 0;
+            }
+
+            .button-container {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                width: 60px;
+                height: calc(100% - 60px);
+                display: flex;
+                flex-direction: column;
+                z-index: 5;
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+
+            .info {
+                padding: 8px;
+                width: 100%;
+                height: 3rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                /* background-color: black; */
+                min-height: 3rem;
+                flex-shrink: 0;
+            }
+
+            .info-container .info{
+                border: 1px solid salmon;
+            }
+
+            .bottom-container .btn,
+            .top-container .btn{
+                border: 1px solid salmon;
+            }
+
+            .info-container {
+                position: absolute;
+                bottom: 30px;
+                left: 40px;
+                width: calc(50% - 40px);
+                display: flex;
+                flex-direction: column;
+                z-index: 5;
+                box-sizing: border-box;
+                gap: 10px;
+            }
+
+            .top-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .bottom-container {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+
+            @media (max-width: 1281px) {
+                .container{
+                    width: 50%;
+                }
+                .btn {
+                    width: 2.3rem;
+                    height: 2.3rem;
+                }
+
+                .bottom-container {
+                    gap: 12px;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .btn {
+                    width: 2rem;
+                    height: 2rem;
+                }
+
+                .info {
+                    height: 2.5rem;
+                    font-size: 0.9rem;
+                }
+
+                .bottom-container {
+                    gap: 10px;
+                }
+
+                .button-container {
+                    width: 50px;
+                    top: 15px;
+                    right: 15px;
+                }
+
+                .info-container {
+                    bottom: 25px;
+                    left: 25px;
+                    width: calc(60% - 30px);
+                }
+            }
+
+            @media (max-width: 480px) {
+                .btn {
+                    width: 1.8rem;
+                    height: 1.8rem;
+                }
+
+                .info {
+                    height: 2rem;
+                    font-size: 0.8rem;
+                }
+
+                .bottom-container {
+                    gap: 8px;
+                }
+
+                .info-container {
+                    bottom: 25px;
+                    left: 25px;
+                }
+            }
         `;
+
+        let style = document.createElement('style');
+        style.classList.add('slider-style');
+        style.textContent = css;
+        document.head.appendChild(style);
     }
+
+    const fetchProducts = async () => {
+        try {
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Response status : ${response.status}`);
+            }
+
+            const json = await response.json();
+
+            console.log(json);
+
+            return json;
+        } catch (error) {
+            console.log(error.message);
+        }
+
+    }
+
+    init();
 
 })();
