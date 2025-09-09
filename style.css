@@ -55,7 +55,7 @@ body {
     height: 100vh;
     margin: 0;
     scroll-snap-align: start;
-    background-color: rgb(33, 85, 145);
+    /* background-color: rgb(33, 85, 145); */
 }
 
 .video-player-container {
@@ -147,7 +147,10 @@ body {
     align-items: center;
 }
 
-@media (max-width: 1281px) {    
+@media (max-width: 1280px) {    
+    .container{
+        max-width: 500px;
+    }
     .btn {
         width: 2.3rem;
         height: 2.3rem;

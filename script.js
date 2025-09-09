@@ -22,28 +22,7 @@ const buildHTML = () => {
                 <div class="container">
                     <div class="slider-wrapper">
                         <div class="slider">
-                            <div class="video-card">
-                                <div class="video-player-container">
-                                    <video class="video-player">
-                                        
-                                    </video>
-                                    <div class="button-container">
-                                        <div class="top-container">
-                                            <div class="btn mute-button"></div>
-                                        </div>
-                                        <div class="bottom-container">
-                                            <div class="btn like-button"></div>
-                                            <div class="btn comment-button"></div>
-                                            <div class="btn share-button"></div>
-                                            <div class="btn save-button"></div>
-                                        </div>
-                                    </div>
-                                    <div class="info-container">
-                                        <div class="info user-container"></div>
-                                        <div class="info tag-container"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -65,9 +44,76 @@ const buildCSS = () => {
 }
 
 const fetchVideos = async () => {
-    const response = await fetch(url);
+    try {
+        const response = await fetch(url);
 
-    if (!response.ok) {
-        throw new Error('Response status : ', response.status);
+        if (!response.ok) {
+            throw new Error('Response status : ', response.status);
+        }
+
+        const json = await response.json();
+
+        renderVideos(json);
+        // console.log(json.hits[0].videos.large.url);
+        return json;
+    } catch (error) {
+        console.log(error.message);
     }
+}
+
+const renderVideos = (videos) => {
+    videos.hits.forEach(video => {
+        const videoCard = document.createElement('div');
+        videoCard.classList.add('video-card');
+
+        const videoPlayerContainer = document.createElement('div');
+        videoPlayerContainer.classList.add('video-player-container');
+
+        const videoPlayer = document.createElement('video'); //
+        videoPlayer.classList.add('video-player');
+        videoPlayer.src = video.videos.large.url;
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('button-container');
+
+        const topContainer = document.createElement('div');
+        topContainer.classList.add('top-container');
+
+        const muteButton = document.createElement('div');
+        muteButton.classList.add('btn', 'mute-button');
+
+        topContainer.append(muteButton);
+
+        const bottomContainer = document.createElement('div');
+        bottomContainer.classList.add('bottom-container');
+
+        const likeButton = document.createElement('div');
+        likeButton.classList.add('btn', 'like-button');
+        const commentButton = document.createElement('div');
+        commentButton.classList.add('btn', 'comment-button');
+        const shareButton = document.createElement('div');
+        shareButton.classList.add('btn', 'share-button');
+        const saveButton = document.createElement('div');
+        saveButton.classList.add('btn', 'save-button');
+
+        bottomContainer.append(likeButton, commentButton, shareButton, saveButton);
+
+        const infoContainer = document.createElement('div');
+        infoContainer.classList.add('info-container');
+
+        const userContainer = document.createElement('div');
+        userContainer.classList.add('info', 'user-container');
+        const tagContainer = document.createElement('div');
+        tagContainer.classList.add('info', 'tag-container');
+
+        infoContainer.append(userContainer, tagContainer);
+
+        buttonContainer.append(topContainer, bottomContainer);
+        videoPlayerContainer.append(videoPlayer, buttonContainer, infoContainer);
+        videoCard.append(videoPlayerContainer);
+
+        const slider = document.querySelector('.slider');
+        slider.append(videoCard);
+
+    });
 }
