@@ -6,7 +6,22 @@ script.onload = () => {
     console.log("jquery loaded");
     buildHTML();
     buildCSS();
-    fetchVideos();
+    fetchVideos().then(() => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            })
+        }, { threshold: 0.9 });
+
+        document.querySelectorAll('.video-player').forEach(video => {
+            observer.observe(video);
+        })
+    })
 };
 
 script.onerror = () => {
@@ -32,15 +47,11 @@ const buildHTML = () => {
     document.querySelector('body').insertAdjacentHTML('beforeend', sliderHTML);
 }
 
-console.log('before css');
-
 const buildCSS = () => {
     let css = document.createElement('link');
     css.rel = "stylesheet";
     css.href = `./style.css`;
     document.head.appendChild(css);
-
-    console.log('css loaded');
 }
 
 const fetchVideos = async () => {
@@ -71,7 +82,12 @@ const renderVideos = (videos) => {
 
         const videoPlayer = document.createElement('video'); //
         videoPlayer.classList.add('video-player');
-        videoPlayer.src = video.videos.large.url;
+        videoPlayer.autoplay = true;
+        videoPlayer.loop = true;
+        videoPlayer.playsInline = true;
+        videoPlayer.muted = false;
+        videoPlayer.preload = "metadata";
+        videoPlayer.src = video.videos.medium.url;
 
         const buttonContainer = document.createElement('div');
         buttonContainer.classList.add('button-container');
@@ -114,6 +130,5 @@ const renderVideos = (videos) => {
 
         const slider = document.querySelector('.slider');
         slider.append(videoCard);
-
     });
 }
