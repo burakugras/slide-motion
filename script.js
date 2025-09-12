@@ -16,12 +16,12 @@ script.onload = () => {
                     video.pause();
                 }
             })
-        }, { threshold: 0.9 });
+        }, { threshold: 0.6 });
 
         document.querySelectorAll('.video-player').forEach(video => {
             observer.observe(video);
         })
-    })
+    });
 };
 
 script.onerror = () => {
@@ -80,12 +80,12 @@ const renderVideos = (videos) => {
         const videoPlayerContainer = document.createElement('div');
         videoPlayerContainer.classList.add('video-player-container');
 
-        const videoPlayer = document.createElement('video'); //
+        const videoPlayer = document.createElement('video');
         videoPlayer.classList.add('video-player');
         videoPlayer.autoplay = true;
         videoPlayer.loop = true;
         videoPlayer.playsInline = true;
-        videoPlayer.muted = false;
+        videoPlayer.muted = true; // başlangıçta sessiz
         videoPlayer.preload = "metadata";
         videoPlayer.src = video.videos.medium.url;
 
@@ -97,6 +97,10 @@ const renderVideos = (videos) => {
 
         const muteButton = document.createElement('div');
         muteButton.classList.add('btn', 'mute-button');
+
+        muteButton.addEventListener("click", () => {
+            videoPlayer.muted = !videoPlayer.muted;
+        });
 
         topContainer.append(muteButton);
 
@@ -131,4 +135,4 @@ const renderVideos = (videos) => {
         const slider = document.querySelector('.slider');
         slider.append(videoCard);
     });
-}
+};
