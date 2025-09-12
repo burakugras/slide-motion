@@ -180,13 +180,21 @@ const renderVideos = (videos) => {
         const tagContainer = document.createElement('div');
         tagContainer.classList.add('info', 'tag-container');
 
-        const tags = document.createElement('span');
-        tags.setAttribute('id', 'tag-container');
-        video.tags.split(',').forEach((tag) => {
-            tags.textContent += `#${tag}`;
+        tagContainer.addEventListener('click', (event) => {
+            const element = event.currentTarget;
+            if (element.classList.contains('expanded')) {
+                element.style.maxHeight = '3rem';
+                element.classList.remove('expanded');
+            } else {
+                element.style.maxHeight = element.scrollHeight + 'px';
+                element.classList.add('expanded');
+            }
         });
 
-        tagContainer.append(tags);
+        video.tags.split(',').forEach((tag) => {
+            const trimmedTag = tag.trim();
+            tagContainer.textContent += `#${trimmedTag} `;
+        });
 
         infoContainer.append(userContainer, tagContainer);
 

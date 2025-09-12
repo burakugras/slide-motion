@@ -180,13 +180,39 @@
      flex-direction: column;
      z-index: 5;
      box-sizing: border-box;
-     gap: 10px;
  }
 
- #tag-container {
+ .info-container .info {
      color: white;
      font-weight: 300;
-     text-wrap: pretty;
+     overflow: hidden;
+     text-align: left;
+     align-items: flex-start;
+     text-overflow: ellipsis;
+     /* white-space: nowrap; */
+     word-break: break-word;
+     height: auto;
+     transition: all 1s ease;
+ }
+
+ .tag-container {
+     color: white;
+     font-weight: 300;
+     max-height: 1.5rem;
+     overflow: hidden;
+     transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+     cursor: pointer;
+     line-height: 1.5;
+ }
+
+ .tag-container.expanded {
+     white-space: normal;
+     text-overflow: clip;
+ }
+
+
+ .tag-container:hover {
+     opacity: 0.8;
  }
 
  .top-container {
