@@ -156,6 +156,17 @@ const renderVideos = (videos) => {
         saveIcon.src = '/icons/save-icon.png';
         saveIcon.alt = 'save';
         saveIcon.classList.add('save-icon');
+
+        const classes = saveIcon.classList;
+        saveIcon.addEventListener('click', () => {
+            classes.toggle('saved-icon');
+            if (classes.contains('saved-icon')) {
+                saveIcon.src = '/icons/saved-icon.png';
+            } else {
+                saveIcon.src = '/icons/save-icon.png';
+            }
+        })
+
         saveButton.append(saveIcon);
 
         bottomContainer.append(likeButton, commentButton, shareButton, saveButton);

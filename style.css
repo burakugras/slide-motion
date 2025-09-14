@@ -108,7 +108,8 @@ body {
 .like-icon,
 .comment-icon,
 .share-icon,
-.save-icon {
+.save-icon,
+.saved-icon {
   max-width: 90%;
   height: auto;
   object-fit: contain;
@@ -241,7 +242,8 @@ body {
   .like-icon,
   .comment-icon,
   .share-icon,
-  .save-icon {
+  .save-icon,
+  .saved-icon {
     max-width: 80%;
   }
 
@@ -274,7 +276,8 @@ body {
   .like-icon,
   .comment-icon,
   .share-icon,
-  .save-icon {
+  .save-icon,
+  .saved-icon {
     max-width: 80%;
   }
 
@@ -314,7 +317,8 @@ body {
   .like-icon,
   .comment-icon,
   .share-icon,
-  .save-icon {
+  .save-icon,
+  .saved-icon {
     max-width: 80%;
   }
 
