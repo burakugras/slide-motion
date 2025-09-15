@@ -98,14 +98,23 @@ const renderVideos = (videos) => {
         const muteButton = document.createElement('div');
         muteButton.classList.add('btn', 'mute-button');
 
-        muteButton.addEventListener("click", () => {
-            videoPlayer.muted = !videoPlayer.muted;
-        });
-
         const soundIcon = document.createElement('img');
-        soundIcon.classList.add('sound-icon');
-        soundIcon.src = '/icons/sound-icon.png';
+        soundIcon.classList.add('sound-icon', 'muted-sound-icon');
+        soundIcon.src = '/icons/muted-sound-icon.png';
         soundIcon.alt = 'mute';
+
+        const soundIconList = soundIcon.classList;
+        soundIcon.addEventListener('click', () => {
+            soundIconList.toggle('muted-sound-icon');
+            if (soundIconList.contains('muted-sound-icon')) {
+                soundIcon.src = '/icons/muted-sound-icon.png';
+                videoPlayer.muted = true;
+            } else {
+                soundIcon.src = '/icons/sound-icon.png';
+                videoPlayer.muted = false;
+            }
+            // console.log('video muted : ', videoPlayer.muted);
+        })
 
         muteButton.appendChild(soundIcon);
 
@@ -124,6 +133,12 @@ const renderVideos = (videos) => {
         const likeCount = document.createElement('span');
         likeCount.setAttribute('id', 'like-count')
         likeCount.textContent = video.likes;
+
+        const likeIconClasses = likeIcon.classList;
+        likeIcon.addEventListener('click', () => {
+            likeIconClasses.toggle('liked-icon');
+            likeIcon.src = likeIconClasses.contains('liked-icon') ? 'icons/liked-icon.png' : 'icons/like-icon.png';
+        })
 
         likeButton.append(likeIcon, likeCount);
 
@@ -157,14 +172,10 @@ const renderVideos = (videos) => {
         saveIcon.alt = 'save';
         saveIcon.classList.add('save-icon');
 
-        const classes = saveIcon.classList;
+        const saveIconClasses = saveIcon.classList;
         saveIcon.addEventListener('click', () => {
-            classes.toggle('saved-icon');
-            if (classes.contains('saved-icon')) {
-                saveIcon.src = '/icons/saved-icon.png';
-            } else {
-                saveIcon.src = '/icons/save-icon.png';
-            }
+            saveIconClasses.toggle('saved-icon');
+            saveIcon.src = (saveIconClasses.contains('saved-icon')) ? '/icons/saved-icon.png' : '/icons/save-icon.png';
         })
 
         saveButton.append(saveIcon);

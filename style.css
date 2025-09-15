@@ -29,6 +29,7 @@ body {
   margin: 0 auto;
   height: 100vh;
   box-sizing: border-box;
+  box-shadow: 0 0 15px 0px #000;
 }
 
 .slider-wrapper {
@@ -113,6 +114,7 @@ body {
   max-width: 90%;
   height: auto;
   object-fit: contain;
+  cursor: pointer;
 }
 
 .info-container .info.user-container {
@@ -130,11 +132,13 @@ body {
   height: 2rem;
   background-color: rgba(128, 128, 128, 0.253);
   border-radius: 50%;
+  cursor: pointer;
 }
 
 #user-name {
   color: white;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .like-button,
