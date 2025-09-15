@@ -105,13 +105,23 @@ const renderVideos = (videos) => {
 
         const soundIconList = soundIcon.classList;
         soundIcon.addEventListener('click', () => {
+            const soundIcons = document.querySelectorAll('.sound-icon');
+            const videoPlayers = document.querySelectorAll('.video-player');
             soundIconList.toggle('muted-sound-icon');
             if (soundIconList.contains('muted-sound-icon')) {
-                soundIcon.src = '/icons/muted-sound-icon.png';
-                videoPlayer.muted = true;
+                soundIcons.forEach((icon) => {
+                    icon.src = '/icons/muted-sound-icon.png';
+                })
+                videoPlayers.forEach((player) => {
+                    player.muted = true;
+                })
             } else {
-                soundIcon.src = '/icons/sound-icon.png';
-                videoPlayer.muted = false;
+                soundIcons.forEach((icon) => {
+                    icon.src = '/icons/sound-icon.png';
+                })
+                videoPlayers.forEach((player) => {
+                    player.muted = false;
+                })
             }
             // console.log('video muted : ', videoPlayer.muted);
         })
