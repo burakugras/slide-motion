@@ -118,7 +118,7 @@ const renderVideos = (videos) => {
             videoPlayers.forEach((player) => {
                 player.muted = isMuted;
             });
-        });      
+        });
 
         muteButton.appendChild(soundIcon);
 
@@ -138,10 +138,11 @@ const renderVideos = (videos) => {
         likeCount.setAttribute('id', 'like-count')
         likeCount.textContent = video.likes;
 
-        const likeIconClasses = likeIcon.classList;
+        let isLiked = false;
         likeIcon.addEventListener('click', () => {
-            likeIconClasses.toggle('liked-icon');
-            likeIcon.src = likeIconClasses.contains('liked-icon') ? 'icons/liked-icon.png' : 'icons/like-icon.png';
+            isLiked = !isLiked;
+            likeIcon.classList.toggle('liked-icon', isLiked);
+            likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
         })
 
         likeButton.append(likeIcon, likeCount);
@@ -176,10 +177,11 @@ const renderVideos = (videos) => {
         saveIcon.alt = 'save';
         saveIcon.classList.add('save-icon');
 
-        const saveIconClasses = saveIcon.classList;
+        let isSaved = false;
         saveIcon.addEventListener('click', () => {
-            saveIconClasses.toggle('saved-icon');
-            saveIcon.src = (saveIconClasses.contains('saved-icon')) ? '/icons/saved-icon.png' : '/icons/save-icon.png';
+            isSaved = !isSaved;
+            saveIcon.classList.toggle('saved-icon', isSaved);
+            saveIcon.src = isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png';
         })
 
         saveButton.append(saveIcon);
