@@ -103,28 +103,22 @@ const renderVideos = (videos) => {
         soundIcon.src = '/icons/muted-sound-icon.png';
         soundIcon.alt = 'mute';
 
-        const soundIconList = soundIcon.classList;
+        let isMuted = videoPlayer.muted;
+
         soundIcon.addEventListener('click', () => {
+            isMuted = !isMuted;
             const soundIcons = document.querySelectorAll('.sound-icon');
             const videoPlayers = document.querySelectorAll('.video-player');
-            soundIconList.toggle('muted-sound-icon');
-            if (soundIconList.contains('muted-sound-icon')) {
-                soundIcons.forEach((icon) => {
-                    icon.src = '/icons/muted-sound-icon.png';
-                })
-                videoPlayers.forEach((player) => {
-                    player.muted = true;
-                })
-            } else {
-                soundIcons.forEach((icon) => {
-                    icon.src = '/icons/sound-icon.png';
-                })
-                videoPlayers.forEach((player) => {
-                    player.muted = false;
-                })
-            }
-            // console.log('video muted : ', videoPlayer.muted);
-        })
+
+            soundIcons.forEach((icon) => {
+                icon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
+                icon.classList.toggle('muted-sound-icon', isMuted); //isMuted true is muted-sound-icon ekle, değilse çıkar 
+            });
+
+            videoPlayers.forEach((player) => {
+                player.muted = isMuted;
+            });
+        });      
 
         muteButton.appendChild(soundIcon);
 
