@@ -150,8 +150,8 @@ body {
   flex-direction: column;
 }
 
-#like-count,
-#comment-count {
+.like-count,
+.comment-count {
   color: white;
   font-size: 1rem;
 }
@@ -279,8 +279,8 @@ body {
     max-width: 80%;
   }
 
-  #like-count,
-  #comment-count {
+  .like-count,
+  .comment-count {
     font-size: 0.9rem;
   }
 
@@ -321,8 +321,8 @@ body {
     max-width: 80%;
   }
 
-  #like-count,
-  #comment-count {
+  .like-count,
+  .comment-count {
     font-size: 0.8rem;
   }
 

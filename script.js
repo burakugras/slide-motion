@@ -1,37 +1,17 @@
 import { url } from "./environment.js";
 
+let page = 1;
+const pageSize = 3;
+let isLoading = false;
+
+let observer;
+
 let script = document.createElement('script');
 script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
+
 script.onload = () => {
     console.log("jquery loaded");
-    buildHTML();
-    buildCSS();
-    fetchVideos().then(() => {
-        let isLoading = false;
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                const video = entry.target;
-                if (entry.isIntersecting) {
-                    const videos = document.querySelectorAll('.video-player');
-                    const lastVideo = videos[videos.length - 1];
-
-                    if (video === lastVideo && !isLoading) {
-                        isLoading = true;
-                        loadMore().then(() => { isLoading = false; })
-                    }
-
-                    video.play();
-                } else {
-                    video.pause();
-                }
-            })
-        }, { threshold: 0.6 });
-
-        document.querySelectorAll('.video-player').forEach(video => {
-            observer.observe(video);
-        })
-    });
 };
 
 script.onerror = () => {
@@ -64,56 +44,70 @@ const buildCSS = () => {
     document.head.appendChild(css);
 }
 
-let page = 1;
-const pageSize = 3;
-const loadMore = async () => {
-
-    console.log("loadMore'a girdi");
-    page++;
-    const moreData = await fetchVideos(page, pageSize);
-
-    const totalPages = Math.ceil(moreData.totalHits / pageSize);
-
-    if (page > totalPages) {
-        console.log("You have reached last video.");
-        return;
-    }
-
-    console.log(moreData);
-
-
-    renderVideos(moreData);
-}
-
-
-
-
+buildHTML();
+buildCSS();
 
 const fetchVideos = async (page, pageSize) => {
     try {
         const response = await fetch(url + `&page=${page}&per_page=${pageSize}`);
 
         if (!response.ok) {
-            throw new Error('Response status : ', response.status);
+            throw new Error(`Response status: ${response.status}`);
         }
 
         const data = await response.json();
 
-        // console.log(data);
-
-        renderVideos(data);
-        // console.log(json.hits[0].videos.large.url);
+        renderVideos(data.hits);
         return data;
     } catch (error) {
         console.log(error.message);
     }
 }
 
+const loadMore = async () => {
+    console.log("loadMore'a girdi");
+
+    isLoading = true;
+    page++;
+    const moreData = await fetchVideos(page, pageSize);
+
+    const totalPages = Math.ceil(moreData.totalHits / pageSize);
+
+    if (page >= totalPages) {
+        console.log("You have reached last video.");
+        observer.disconnect();
+    }
+
+    isLoading = false;
+}
+
+const setupObserver = () => {
+    observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            const video = entry.target;
+
+            if (entry.isIntersecting) {
+                const videos = document.querySelectorAll('.video-player');
+                const lastVideo = videos[videos.length - 1];
+
+                if (video === lastVideo && !isLoading) {
+                    loadMore();
+                }
+
+                video.play();
+            } else {
+                video.pause();
+            }
+        })
+    }, { threshold: 0.6 })
+}
+
+
 let isMuted = true;
 // console.log('ilk isMuted değeri : ', isMuted);
 
 const renderVideos = (videos) => {
-    videos.hits.forEach(video => {
+    videos.forEach(video => {
         const videoCard = document.createElement('div');
         videoCard.classList.add('video-card');
 
@@ -125,11 +119,11 @@ const renderVideos = (videos) => {
         videoPlayer.autoplay = true;
         videoPlayer.loop = true;
         videoPlayer.playsInline = true;
-        videoPlayer.muted = isMuted; // başlangıçta sessiz
+        videoPlayer.muted = isMuted;
         videoPlayer.preload = "metadata";
         videoPlayer.src = video.videos.medium.url;
 
-        // observer.observe(videoPlayer); // not defined
+        observer.observe(videoPlayer);
 
 
         const buttonContainer = document.createElement('div');
@@ -155,14 +149,12 @@ const renderVideos = (videos) => {
 
             soundIcons.forEach((icon) => {
                 icon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
-                icon.classList.toggle('muted-sound-icon', isMuted); //isMuted true is muted-sound-icon ekle, değilse çıkar 
+                icon.classList.toggle('muted-sound-icon', isMuted);
             });
 
             videoPlayers.forEach((player) => {
                 player.muted = isMuted;
             });
-
-            // console.log('tıklandıktan sonraki isMuted değeri : ', isMuted);
         });
 
         muteButton.appendChild(soundIcon);
@@ -179,7 +171,7 @@ const renderVideos = (videos) => {
         likeIcon.classList.add('like-icon');
         likeIcon.src = '/icons/like-icon.png';
         const likeCount = document.createElement('span');
-        likeCount.setAttribute('id', 'like-count') //class olmalı
+        likeCount.classList.add('like-count') //class olmalı
         likeCount.textContent = video.likes;
 
         let isLiked = false;
@@ -199,7 +191,7 @@ const renderVideos = (videos) => {
         commentIcon.src = '/icons/comment-icon.png';
         commentIcon.alt = 'comment';
         const commentCount = document.createElement('span');
-        commentCount.setAttribute('id', 'comment-count');
+        commentCount.classList.add('comment-count');
         commentCount.textContent = video.comments;
 
         commentButton.append(commentIcon, commentCount);
@@ -278,3 +270,6 @@ const renderVideos = (videos) => {
         slider.append(videoCard);
     });
 };
+
+setupObserver();
+fetchVideos(page, pageSize);
