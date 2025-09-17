@@ -7,10 +7,20 @@ script.onload = () => {
     buildHTML();
     buildCSS();
     fetchVideos().then(() => {
+        let isLoading = false;
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 const video = entry.target;
                 if (entry.isIntersecting) {
+                    const videos = document.querySelectorAll('.video-player');
+                    const lastVideo = videos[videos.length - 1];
+
+                    if (video === lastVideo && !isLoading) {
+                        isLoading = true;
+                        loadMore().then(() => { isLoading = false; })
+                    }
+
                     video.play();
                 } else {
                     video.pause();
@@ -54,19 +64,46 @@ const buildCSS = () => {
     document.head.appendChild(css);
 }
 
-const fetchVideos = async () => {
+let page = 1;
+const pageSize = 3;
+const loadMore = async () => {
+
+    console.log("loadMore'a girdi");
+    page++;
+    const moreData = await fetchVideos(page, pageSize);
+
+    const totalPages = Math.ceil(moreData.totalHits / pageSize);
+
+    if (page > totalPages) {
+        console.log("You have reached last video.");
+        return;
+    }
+
+    console.log(moreData);
+
+
+    renderVideos(moreData);
+}
+
+
+
+
+
+const fetchVideos = async (page, pageSize) => {
     try {
-        const response = await fetch(url);
+        const response = await fetch(url + `&page=${page}&per_page=${pageSize}`);
 
         if (!response.ok) {
             throw new Error('Response status : ', response.status);
         }
 
-        const json = await response.json();
+        const data = await response.json();
 
-        renderVideos(json);
+        // console.log(data);
+
+        renderVideos(data);
         // console.log(json.hits[0].videos.large.url);
-        return json;
+        return data;
     } catch (error) {
         console.log(error.message);
     }
@@ -91,6 +128,9 @@ const renderVideos = (videos) => {
         videoPlayer.muted = isMuted; // başlangıçta sessiz
         videoPlayer.preload = "metadata";
         videoPlayer.src = video.videos.medium.url;
+
+        // observer.observe(videoPlayer); // not defined
+
 
         const buttonContainer = document.createElement('div');
         buttonContainer.classList.add('button-container');
@@ -138,9 +178,8 @@ const renderVideos = (videos) => {
         const likeIcon = document.createElement('img');
         likeIcon.classList.add('like-icon');
         likeIcon.src = '/icons/like-icon.png';
-        likeButton.alt = 'like';
         const likeCount = document.createElement('span');
-        likeCount.setAttribute('id', 'like-count')
+        likeCount.setAttribute('id', 'like-count') //class olmalı
         likeCount.textContent = video.likes;
 
         let isLiked = false;
