@@ -72,6 +72,9 @@ const fetchVideos = async () => {
     }
 }
 
+let isMuted = true;
+// console.log('ilk isMuted değeri : ', isMuted);
+
 const renderVideos = (videos) => {
     videos.hits.forEach(video => {
         const videoCard = document.createElement('div');
@@ -85,7 +88,7 @@ const renderVideos = (videos) => {
         videoPlayer.autoplay = true;
         videoPlayer.loop = true;
         videoPlayer.playsInline = true;
-        videoPlayer.muted = true; // başlangıçta sessiz
+        videoPlayer.muted = isMuted; // başlangıçta sessiz
         videoPlayer.preload = "metadata";
         videoPlayer.src = video.videos.medium.url;
 
@@ -103,9 +106,9 @@ const renderVideos = (videos) => {
         soundIcon.src = '/icons/muted-sound-icon.png';
         soundIcon.alt = 'mute';
 
-        let isMuted = videoPlayer.muted;
 
-        soundIcon.addEventListener('click', () => {
+
+        muteButton.addEventListener('click', () => {
             isMuted = !isMuted;
             const soundIcons = document.querySelectorAll('.sound-icon');
             const videoPlayers = document.querySelectorAll('.video-player');
@@ -118,6 +121,8 @@ const renderVideos = (videos) => {
             videoPlayers.forEach((player) => {
                 player.muted = isMuted;
             });
+
+            // console.log('tıklandıktan sonraki isMuted değeri : ', isMuted);
         });
 
         muteButton.appendChild(soundIcon);
@@ -139,7 +144,7 @@ const renderVideos = (videos) => {
         likeCount.textContent = video.likes;
 
         let isLiked = false;
-        likeIcon.addEventListener('click', () => {
+        likeButton.addEventListener('click', () => {
             isLiked = !isLiked;
             likeIcon.classList.toggle('liked-icon', isLiked);
             likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
@@ -178,7 +183,7 @@ const renderVideos = (videos) => {
         saveIcon.classList.add('save-icon');
 
         let isSaved = false;
-        saveIcon.addEventListener('click', () => {
+        saveButton.addEventListener('click', () => {
             isSaved = !isSaved;
             saveIcon.classList.toggle('saved-icon', isSaved);
             saveIcon.src = isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png';
