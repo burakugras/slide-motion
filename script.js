@@ -11,7 +11,10 @@ script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
 
 script.onload = () => {
     console.log("jquery loaded");
-
+    buildHTML();
+    buildCSS();
+    setupObserver();
+    fetchVideos(page, pageSize);
 };
 
 script.onerror = () => {
@@ -44,8 +47,7 @@ const buildCSS = () => {
     document.head.appendChild(css);
 }
 
-buildHTML();
-buildCSS();
+
 
 const fetchVideos = async (page, pageSize) => {
     try {
@@ -270,6 +272,3 @@ const renderVideos = (videos) => {
         slider.append(videoCard);
     });
 };
-
-setupObserver();
-fetchVideos(page, pageSize);
