@@ -60,7 +60,16 @@ const fetchVideos = async (page, pageSize) => {
 
         const data = await response.json();
 
-        renderVideos(data.hits);
+        function handleVideos(videos) {
+            const enhancedVideos = videos.map((video) => ({
+                ...video,
+                isLiked: false,
+                isSaved: false
+            }));
+
+            renderVideos(enhancedVideos);
+        }
+        handleVideos(data.hits);
         return data;
     } catch (error) {
         console.log(error.message);
@@ -167,22 +176,28 @@ const renderVideos = (videos) => {
         const bottomContainer = document.createElement('div');
         bottomContainer.classList.add('bottom-container');
 
+        let like = video.isLiked;
+
         const likeButton = document.createElement('div');
         likeButton.classList.add('btn', 'like-button');
 
         const likeIcon = document.createElement('img');
         likeIcon.classList.add('like-icon');
-        likeIcon.src = '/icons/like-icon.png';
+        likeIcon.dataset.liked = like;
+        likeIcon.src = like ? '/icons/liked-icon.png' : '/icons/like-icon.png';
         const likeCount = document.createElement('span');
-        likeCount.classList.add('like-count') //class olmalı
+        likeCount.classList.add('like-count')
         likeCount.textContent = video.likes;
 
-        let isLiked = false;
-        likeButton.addEventListener('click', () => {
-            isLiked = !isLiked;
-            likeIcon.classList.toggle('liked-icon', isLiked);
-            likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
-        })
+
+
+
+        // let isLiked = false;
+        // likeButton.addEventListener('click', () => {
+        //     isLiked = !isLiked;
+        //     likeIcon.classList.toggle('liked-icon', isLiked);
+        //     likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
+        // })
 
         likeButton.append(likeIcon, likeCount);
 
@@ -211,17 +226,20 @@ const renderVideos = (videos) => {
         const saveButton = document.createElement('div');
         saveButton.classList.add('btn', 'save-button');
 
+        let save = video.isSaved;
+
         const saveIcon = document.createElement('img');
         saveIcon.src = '/icons/save-icon.png';
         saveIcon.alt = 'save';
+        saveIcon.dataset.saved = save;
         saveIcon.classList.add('save-icon');
 
-        let isSaved = false;
-        saveButton.addEventListener('click', () => {
-            isSaved = !isSaved;
-            saveIcon.classList.toggle('saved-icon', isSaved);
-            saveIcon.src = isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png';
-        })
+        // let isSaved = false;
+        // saveButton.addEventListener('click', () => {
+        //     isSaved = !isSaved;
+        //     saveIcon.classList.toggle('saved-icon', isSaved);
+        //     saveIcon.src = isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png';
+        // })
 
         saveButton.append(saveIcon);
 
@@ -252,17 +270,6 @@ const renderVideos = (videos) => {
             tagContainer.textContent += `#${trimmedTag} `;
         });
 
-        tagContainer.addEventListener('click', (event) => {
-            const element = event.currentTarget;
-            if (element.classList.contains('expanded')) {
-                element.style.maxHeight = '3rem';
-                element.classList.remove('expanded');
-            } else {
-                element.style.maxHeight = element.scrollHeight + 'px';
-                element.classList.add('expanded');
-            }
-        });
-
         infoContainer.append(userContainer, tagContainer);
 
         buttonContainer.append(topContainer, bottomContainer);
@@ -274,32 +281,76 @@ const renderVideos = (videos) => {
     });
 };
 
-console.log(isMuted);
+// console.log(isMuted);
 
 const addEvents = () => {
-    //mute event
     document.addEventListener('click', (event) => {
-        console.log('mute butonuna tıklandı!')
+        handleMuteButton(event);
+        handleLikeButton(event);
+        handleSaveButton(event);
+        handleTagContainer(event);
+    })
 
-        const muteButton = event.target.closest('.mute-button');
+}
 
-        if (muteButton) {
-            isMuted = !isMuted;
+const handleMuteButton = (event) => {
+    const muteButton = event.target.closest('.mute-button');
 
-            const soundIcons = document.querySelectorAll('.sound-icon');
-            const videoPlayers = document.querySelectorAll('.video-player');
+    if (muteButton) {
+        isMuted = !isMuted;
 
-            const newIconSrc = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
-            const shouldMute = isMuted;
+        const soundIcons = document.querySelectorAll('.sound-icon');
+        const videoPlayers = document.querySelectorAll('.video-player');
 
-            soundIcons.forEach(soundIcon => {
-                soundIcon.src = newIconSrc;
-                soundIcon.classList.toggle('muted-sound-icon', isMuted);
-            });
+        const newIconSrc = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
+        const shouldMute = isMuted;
 
-            videoPlayers.forEach((videoPlayer) => {
-                videoPlayer.muted = shouldMute;
-            });
-        }
-    });
+        soundIcons.forEach(soundIcon => {
+            soundIcon.src = newIconSrc;
+            soundIcon.classList.toggle('muted-sound-icon', isMuted);
+        });
+
+        videoPlayers.forEach((videoPlayer) => {
+            videoPlayer.muted = shouldMute;
+        });
+    }
+}
+
+const handleLikeButton = (event) => {
+    const likeIcon = event.target.closest('.like-icon');
+
+    if (likeIcon) {
+        let isLiked = likeIcon.dataset.liked === "true";
+
+        isLiked = !isLiked;
+        likeIcon.dataset.liked = isLiked;
+
+        likeIcon.classList.toggle('liked-icon', isLiked);
+        likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
+    }
+}
+
+const handleSaveButton = (event) => {
+    const saveIcon = event.target.closest('.save-icon');
+
+    if (saveIcon) {
+        let isSaved = saveIcon.getAttribute("data-saved") === "true";
+
+        isSaved = !isSaved;
+        saveIcon.dataset.saved = isSaved;
+
+        saveIcon.classList.toggle('saved-icon', isSaved);
+        saveIcon.src = isSaved ? 'icons/saved-icon.png' : 'icons/save-icon.png';
+    }
+}
+
+const handleTagContainer = (event) => {
+    const element = event.target;
+    if (element.classList.contains('expanded')) {
+        element.style.maxHeight = '3rem';
+        element.classList.remove('expanded');
+    } else {
+        element.style.maxHeight = element.scrollHeight + 'px';
+        element.classList.add('expanded');
+    }
 }
