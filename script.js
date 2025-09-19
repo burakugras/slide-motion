@@ -14,6 +14,7 @@ script.onload = () => {
     buildHTML();
     buildCSS();
     setupObserver();
+    addEvents();
     fetchVideos(page, pageSize);
 };
 
@@ -138,26 +139,26 @@ const renderVideos = (videos) => {
         muteButton.classList.add('btn', 'mute-button');
 
         const soundIcon = document.createElement('img');
-        soundIcon.classList.add('sound-icon', 'muted-sound-icon');
-        soundIcon.src = '/icons/muted-sound-icon.png';
+        soundIcon.classList = isMuted ? [`sound-icon  muted-sound-icon`] : ['sound-icon'];
+        soundIcon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
         soundIcon.alt = 'mute';
 
 
 
-        muteButton.addEventListener('click', () => {
-            isMuted = !isMuted;
-            const soundIcons = document.querySelectorAll('.sound-icon');
-            const videoPlayers = document.querySelectorAll('.video-player');
+        // muteButton.addEventListener('click', () => {
+        //     isMuted = !isMuted;
+        //     const soundIcons = document.querySelectorAll('.sound-icon');
+        //     const videoPlayers = document.querySelectorAll('.video-player');
 
-            soundIcons.forEach((icon) => {
-                icon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
-                icon.classList.toggle('muted-sound-icon', isMuted);
-            });
+        //     soundIcons.forEach((icon) => {
+        //         icon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
+        //         icon.classList.toggle('muted-sound-icon', isMuted);
+        //     });
 
-            videoPlayers.forEach((player) => {
-                player.muted = isMuted;
-            });
-        });
+        //     videoPlayers.forEach((player) => {
+        //         player.muted = isMuted;
+        //     });
+        // });
 
         muteButton.appendChild(soundIcon);
 
@@ -272,3 +273,33 @@ const renderVideos = (videos) => {
         slider.append(videoCard);
     });
 };
+
+console.log(isMuted);
+
+const addEvents = () => {
+    //mute event
+    document.addEventListener('click', (event) => {
+        console.log('mute butonuna tıklandı!')
+
+        const muteButton = event.target.closest('.mute-button');
+
+        if (muteButton) {
+            isMuted = !isMuted;
+
+            const soundIcons = document.querySelectorAll('.sound-icon');
+            const videoPlayers = document.querySelectorAll('.video-player');
+
+            const newIconSrc = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
+            const shouldMute = isMuted;
+
+            soundIcons.forEach(soundIcon => {
+                soundIcon.src = newIconSrc;
+                soundIcon.classList.toggle('muted-sound-icon', isMuted);
+            });
+
+            videoPlayers.forEach((videoPlayer) => {
+                videoPlayer.muted = shouldMute;
+            });
+        }
+    });
+}
