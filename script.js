@@ -104,7 +104,11 @@ const setupObserver = () => {
                 }
 
                 if (video.readyState >= 2) { // 2 = HAVE_CURRENT_DATA means : The request has been sent
-                    video.play().catch(() => { })
+                    video.play().catch(() => { });
+                } else {
+                    video.addEventListener("canplay", () => {
+                        video.play().catch(() => { });
+                    }, { once: true });
                 }
             } else {
                 video.pause();
