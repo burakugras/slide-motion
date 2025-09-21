@@ -24,7 +24,6 @@ script.onerror = () => {
 
 document.head.appendChild(script);
 
-
 const buildHTML = () => {
     const sliderHTML = `
             <div class="slider-container">
@@ -47,8 +46,6 @@ const buildCSS = () => {
     css.href = `./style.css`;
     document.head.appendChild(css);
 }
-
-
 
 const fetchVideos = async (page, pageSize) => {
     try {
@@ -106,13 +103,16 @@ const setupObserver = () => {
                     loadMore();
                 }
 
-                video.play();
+                if (video.readyState >= 2) { // 2 = HAVE_CURRENT_DATA means : The request has been sent
+                    video.play().catch(() => { })
+                }
             } else {
                 video.pause();
             }
         })
     }, { threshold: 0.6 })
 }
+
 
 
 let isMuted = true;
@@ -152,23 +152,6 @@ const renderVideos = (videos) => {
         soundIcon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
         soundIcon.alt = 'mute';
 
-
-
-        // muteButton.addEventListener('click', () => {
-        //     isMuted = !isMuted;
-        //     const soundIcons = document.querySelectorAll('.sound-icon');
-        //     const videoPlayers = document.querySelectorAll('.video-player');
-
-        //     soundIcons.forEach((icon) => {
-        //         icon.src = isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
-        //         icon.classList.toggle('muted-sound-icon', isMuted);
-        //     });
-
-        //     videoPlayers.forEach((player) => {
-        //         player.muted = isMuted;
-        //     });
-        // });
-
         muteButton.appendChild(soundIcon);
 
         topContainer.append(muteButton);
@@ -188,16 +171,6 @@ const renderVideos = (videos) => {
         const likeCount = document.createElement('span');
         likeCount.classList.add('like-count')
         likeCount.textContent = video.likes;
-
-
-
-
-        // let isLiked = false;
-        // likeButton.addEventListener('click', () => {
-        //     isLiked = !isLiked;
-        //     likeIcon.classList.toggle('liked-icon', isLiked);
-        //     likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
-        // })
 
         likeButton.append(likeIcon, likeCount);
 
@@ -233,13 +206,6 @@ const renderVideos = (videos) => {
         saveIcon.alt = 'save';
         saveIcon.dataset.saved = save;
         saveIcon.classList.add('save-icon');
-
-        // let isSaved = false;
-        // saveButton.addEventListener('click', () => {
-        //     isSaved = !isSaved;
-        //     saveIcon.classList.toggle('saved-icon', isSaved);
-        //     saveIcon.src = isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png';
-        // })
 
         saveButton.append(saveIcon);
 
@@ -345,12 +311,14 @@ const handleSaveButton = (event) => {
 }
 
 const handleTagContainer = (event) => {
-    const element = event.target;
-    if (element.classList.contains('expanded')) {
-        element.style.maxHeight = '3rem';
-        element.classList.remove('expanded');
-    } else {
-        element.style.maxHeight = element.scrollHeight + 'px';
-        element.classList.add('expanded');
+    const element = event.target.closest(".tag-container");
+    if (element) {
+        if (element.classList.contains('expanded')) {
+            element.style.maxHeight = '3rem';
+            element.classList.remove('expanded');
+        } else {
+            element.style.maxHeight = element.scrollHeight + 'px';
+            element.classList.add('expanded');
+        }
     }
 }
