@@ -118,7 +118,6 @@ const setupObserver = () => {
 }
 
 
-
 let isMuted = true;
 // console.log('ilk isMuted değeri : ', isMuted);
 
@@ -130,6 +129,17 @@ const renderVideos = (videos) => {
         const videoPlayerContainer = document.createElement('div');
         videoPlayerContainer.classList.add('video-player-container');
 
+        const loadingContainer = document.createElement('div');
+        loadingContainer.classList.add('loading-container');
+
+        const loadingIcon = document.createElement('img');
+        loadingIcon.classList.add('loading-icon');
+        loadingIcon.src = '/icons/loading-icon.png';
+        loadingIcon.alt = '..loading';
+
+        loadingContainer.append(loadingIcon);
+        videoPlayerContainer.append(loadingContainer);
+
         const videoPlayer = document.createElement('video');
         videoPlayer.classList.add('video-player');
         videoPlayer.autoplay = true;
@@ -139,8 +149,11 @@ const renderVideos = (videos) => {
         videoPlayer.preload = "metadata";
         videoPlayer.src = video.videos.medium.url;
 
-        observer.observe(videoPlayer);
+        videoPlayer.addEventListener('canplay', () => {
+            loadingContainer.remove();
+        })
 
+        observer.observe(videoPlayer);
 
         const buttonContainer = document.createElement('div');
         buttonContainer.classList.add('button-container');

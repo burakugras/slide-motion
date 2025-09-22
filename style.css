@@ -69,6 +69,45 @@ body {
   overflow: hidden;
 }
 
+.loading-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+  z-index: 10;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.loading-container .loading-icon {
+  content: '..loading';
+  position: fixed;
+  color: white;
+  display: grid;
+  place-content: center;
+  animation: loader 2s infinite;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes loader {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .video-player {
   position: absolute;
   top: 0;
@@ -86,7 +125,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* background-color: black; */
   min-width: 2rem;
   min-height: 2rem;
   flex-shrink: 0;
@@ -206,10 +244,6 @@ body {
   white-space: normal;
   text-overflow: clip;
 }
-
-/* .tag-container:hover {
-     opacity: 0.8;
- } */
 
 .top-container {
   display: flex;
