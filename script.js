@@ -300,9 +300,13 @@ const handleMuteButton = (event) => {
 }
 
 const handleLikeButton = (event) => {
-    const likeIcon = event.target.closest('.like-icon');
+    const likeButton = event.target.closest('.like-button');
 
-    if (likeIcon) {
+    if (likeButton) {
+        const likeIcon = likeButton.querySelector('.like-icon');
+        const likeCount = likeButton.querySelector('.like-count');
+
+        let count = Number(likeCount.textContent);
         let isLiked = likeIcon.dataset.liked === "true";
 
         isLiked = !isLiked;
@@ -310,13 +314,16 @@ const handleLikeButton = (event) => {
 
         likeIcon.classList.toggle('liked-icon', isLiked);
         likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
+
+        likeCount.textContent = isLiked ? count + 1 : count - 1;
     }
 }
 
 const handleSaveButton = (event) => {
-    const saveIcon = event.target.closest('.save-icon');
+    const saveButton = event.target.closest('.save-button');
 
-    if (saveIcon) {
+    if (saveButton) {
+        const saveIcon = saveButton.querySelector('.save-icon');
         let isSaved = saveIcon.getAttribute("data-saved") === "true";
 
         isSaved = !isSaved;
@@ -328,14 +335,15 @@ const handleSaveButton = (event) => {
 }
 
 const handleTagContainer = (event) => {
-    const element = event.target.closest(".tag-container");
-    if (element) {
-        if (element.classList.contains('expanded')) {
-            element.style.maxHeight = '3rem';
-            element.classList.remove('expanded');
+    const tagContainer = event.target.closest(".tag-container");
+
+    if (tagContainer) {
+        if (tagContainer.classList.contains('expanded')) {
+            tagContainer.style.maxHeight = '3rem';
+            tagContainer.classList.remove('expanded');
         } else {
-            element.style.maxHeight = element.scrollHeight + 'px';
-            element.classList.add('expanded');
+            tagContainer.style.maxHeight = tagContainer.scrollHeight + 'px';
+            tagContainer.classList.add('expanded');
         }
     }
 }
