@@ -74,8 +74,6 @@ const fetchVideos = async (page, pageSize) => {
 }
 
 const loadMore = async () => {
-    console.log("loadMore'a girdi");
-
     isLoading = true;
     page++;
     const moreData = await fetchVideos(page, pageSize);
@@ -236,7 +234,7 @@ const renderVideos = (videos) => {
 
         const userIcon = document.createElement('img');
         userIcon.classList.add('user-icon');
-        userIcon.src = '/icons/user-icon.png';
+        userIcon.src = video.userImageURL || '/icons/user-icon.png';
         userIcon.alt = 'user';
 
         const userName = document.createElement('span');
