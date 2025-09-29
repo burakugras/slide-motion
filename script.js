@@ -57,6 +57,12 @@ const fetchVideos = async (page, pageSize) => {
 
         const data = await response.json();
 
+        if (data && data.totalHits !== undefined) {
+            console.log(data.totalHits);
+        } else {
+            console.error("Data or totalHits property is missing in the response.");
+        }
+
         function handleVideos(videos) {
             const enhancedVideos = videos.map((video) => ({
                 ...video,
@@ -70,6 +76,7 @@ const fetchVideos = async (page, pageSize) => {
         return data;
     } catch (error) {
         console.log(error.message);
+        return null;
     }
 }
 
@@ -77,6 +84,12 @@ const loadMore = async () => {
     isLoading = true;
     page++;
     const moreData = await fetchVideos(page, pageSize);
+
+    if (!moreData || !moreData.totalHits) {
+        console.log('No more data available.')
+        isLoading = false;
+        return;
+    }
 
     const totalPages = Math.ceil(moreData.totalHits / pageSize);
 
@@ -147,9 +160,14 @@ const renderVideos = (videos) => {
         videoPlayer.preload = "metadata";
         videoPlayer.src = video.videos.tiny.url;
 
-        videoPlayer.addEventListener('canplay', () => {
+        const canPlayHandler = () => {
+            videoPlayer.play().catch(() => { });
             loadingContainer.remove();
-        })
+        }
+
+        videoPlayer._canPlayHandler = canPlayHandler;
+
+        videoPlayer.addEventListener('canplay', canPlayHandler, { once: true });
 
         observer.observe(videoPlayer);
 
@@ -350,23 +368,58 @@ const handleTagContainer = (event) => {
 
 const optimizePage = () => {
     const slider = document.querySelector('.slider');
-    const cards = slider.children;
+    const cards = Array.from(slider.children);
 
     if (cards.length > 20) {
-        for (let i = 0; i < cards.length - 15; i++) {
-            const card = cards[i];
+        const cardsToRemove = cards.slice(0, cards.length - 15);
+
+        cardsToRemove.forEach((card) => {
             const video = card.querySelector('video');
 
             if (video) {
                 observer.unobserve(video);
-                video.srcObject = null;
                 cleanupVideo(video);
 
+                if (video._canPlayHandler) {
+                    video.removeEventListener('canplay', video._canPlayHandler);
+                    delete video._canPlayHandler;
+                }
 
                 video.src = '';
                 video.srcObject = null;
             }
+
+            const cardElements = card.querySelectorAll('*');
+            cardElements.forEach(element => {
+                if (element.dataset) {
+                    Object.keys(element.dataset).forEach(key => {
+                        delete element.dataset[key];
+                    });
+                }
+
+                if (element.tagName === 'IMG') {
+                    element.src = '';
+                    element.srcset = '';
+                }
+
+                Object.getOwnPropertyNames(element).forEach(prop => {
+                    if (prop.startsWith('_') || prop.match(/^[a-z]/)) {
+                        try {
+                            delete element[prop];
+                        } catch (error) {
+                            //
+                        }
+                    }
+                });
+            });
+
+            card.remove();
+        });
+
+        if (typeof window !== 'undefined' && typeof window.gc === 'function') {
+            window.gc();
         }
+
     }
 }
 
