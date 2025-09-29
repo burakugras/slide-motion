@@ -57,6 +57,7 @@ body {
   overflow: hidden;
   transition: border-color 0.3s ease;
   height: 100vh;
+  min-height: 100vh;
   margin: 0;
   scroll-snap-align: start;
   /* background-color: rgb(33, 85, 145); */

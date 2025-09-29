@@ -58,7 +58,7 @@ const fetchVideos = async (page, pageSize) => {
         const data = await response.json();
 
         if (data && data.totalHits !== undefined) {
-            console.log(data.totalHits);
+            // console.log(data.totalHits);
         } else {
             console.error("Data or totalHits property is missing in the response.");
         }
@@ -81,8 +81,11 @@ const fetchVideos = async (page, pageSize) => {
 }
 
 const loadMore = async () => {
+    if (isLoading) return;
+
     isLoading = true;
     page++;
+
     const moreData = await fetchVideos(page, pageSize);
 
     if (!moreData || !moreData.totalHits) {
@@ -98,7 +101,7 @@ const loadMore = async () => {
         observer.disconnect();
     }
 
-    isLoading = false;
+    // isLoading = false;
 }
 
 const setupObserver = () => {
@@ -130,10 +133,15 @@ const setupObserver = () => {
 
 
 let isMuted = true;
-// console.log('ilk isMuted değeri : ', isMuted);
+
+let renderedIds = new Set();
 
 const renderVideos = (videos) => {
-    videos.forEach(video => {
+    const uniqueVideos = videos.filter(v => !renderedIds.has(v.id));
+
+    uniqueVideos.forEach(video => {
+        renderedIds.add(video.id);
+
         const videoCard = document.createElement('div');
         videoCard.classList.add('video-card');
 
@@ -277,6 +285,8 @@ const renderVideos = (videos) => {
 
         const slider = document.querySelector('.slider');
         slider.append(videoCard);
+
+        isLoading = false;
     });
 
     optimizePage();
@@ -373,6 +383,10 @@ const optimizePage = () => {
     if (cards.length > 20) {
         const cardsToRemove = cards.slice(0, cards.length - 15);
 
+        const scrollTop = slider.scrollTop;
+        const firstCardToRemove = cardsToRemove[0];
+        const removedHeight = cardsToRemove.reduce((sum, card) => sum + card.offsetHeight, 0);
+
         cardsToRemove.forEach((card) => {
             const video = card.querySelector('video');
 
@@ -416,10 +430,11 @@ const optimizePage = () => {
             card.remove();
         });
 
+        slider.scrollTop = scrollTop - removedHeight;
+
         if (typeof window !== 'undefined' && typeof window.gc === 'function') {
             window.gc();
         }
-
     }
 }
 
