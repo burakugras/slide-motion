@@ -112,8 +112,9 @@ const setupObserver = () => {
             if (entry.isIntersecting) {
                 const videos = document.querySelectorAll('.video-player');
                 const lastVideo = videos[videos.length - 1];
+                const secondLastVideo = videos[videos.length - 2];
 
-                if (video === lastVideo && !isLoading) {
+                if ((video === lastVideo || video === secondLastVideo) && !isLoading) {
                     loadMore();
                 }
 
@@ -134,14 +135,9 @@ const setupObserver = () => {
 
 let isMuted = true;
 
-let renderedIds = new Set();
 
 const renderVideos = (videos) => {
-    const uniqueVideos = videos.filter(v => !renderedIds.has(v.id));
-
-    uniqueVideos.forEach(video => {
-        renderedIds.add(video.id);
-
+    videos.forEach(video => {
         const videoCard = document.createElement('div');
         videoCard.classList.add('video-card');
 
@@ -166,7 +162,7 @@ const renderVideos = (videos) => {
         videoPlayer.playsInline = true;
         videoPlayer.muted = isMuted;
         videoPlayer.preload = "metadata";
-        videoPlayer.src = video.videos.tiny.url;
+        videoPlayer.src = video.videos.small.url;
 
         const canPlayHandler = () => {
             videoPlayer.play().catch(() => { });
@@ -285,10 +281,9 @@ const renderVideos = (videos) => {
 
         const slider = document.querySelector('.slider');
         slider.append(videoCard);
-
-        isLoading = false;
     });
 
+    isLoading = false;
     optimizePage();
 };
 
@@ -384,7 +379,7 @@ const optimizePage = () => {
         const cardsToRemove = cards.slice(0, cards.length - 15);
 
         const scrollTop = slider.scrollTop;
-        const firstCardToRemove = cardsToRemove[0];
+        // const firstCardToRemove = cardsToRemove[0];
         const removedHeight = cardsToRemove.reduce((sum, card) => sum + card.offsetHeight, 0);
 
         cardsToRemove.forEach((card) => {
