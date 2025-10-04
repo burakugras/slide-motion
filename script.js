@@ -3,7 +3,6 @@ import { url } from "./environment.js";
 let page = 1;
 const pageSize = 3;
 let isLoading = false;
-
 let observer;
 
 let script = document.createElement('script');
@@ -113,18 +112,32 @@ const setupObserver = () => {
                 const videos = document.querySelectorAll('.video-player');
                 const lastVideo = videos[videos.length - 1];
                 const secondLastVideo = videos[videos.length - 2];
+                // const playIcons = document.querySelectorAll('.play-icon');
 
                 if ((video === lastVideo || video === secondLastVideo) && !isLoading) {
                     loadMore();
                 }
 
+                const container = video.closest('.video-player-container');
+                const playIcon = container?.querySelector('.play-icon');
+                if (playIcon) {
+                    playIcon.remove();
+                }
+
                 if (video.readyState >= 2) { // 2 = HAVE_CURRENT_DATA means : The request has been sent
                     video.play().catch(() => { });
+
+
                 } else {
                     video.addEventListener("canplay", () => {
                         video.play().catch(() => { });
                     }, { once: true });
+
                 }
+
+                // playIcons.forEach(icon => {
+                //     icon.remove();
+                // });
             } else {
                 video.pause();
             }
@@ -132,9 +145,7 @@ const setupObserver = () => {
     }, { threshold: 0.6 })
 }
 
-
 let isMuted = true;
-
 
 const renderVideos = (videos) => {
     videos.forEach(video => {
@@ -295,6 +306,7 @@ const addEvents = () => {
         handleLikeButton(event);
         handleSaveButton(event);
         handleTagContainer(event);
+        handlePlayButton(event);
     })
 
 }
@@ -367,6 +379,33 @@ const handleTagContainer = (event) => {
         } else {
             tagContainer.style.maxHeight = tagContainer.scrollHeight + 'px';
             tagContainer.classList.add('expanded');
+        }
+    }
+}
+
+const handlePlayButton = (event) => {
+    const video = event.target.closest('.video-player');
+
+    if (!video) return;
+
+    const videoPlayerContainer = video.closest('.video-player-container');
+    let playIcon = videoPlayerContainer.querySelector('.play-icon');
+
+    if (!video.paused) {
+        video.pause();
+
+        if (!playIcon) {
+            playIcon = document.createElement('img');
+            playIcon.classList.add('play-icon');
+            playIcon.src = 'icons/play-icon.png';
+            videoPlayerContainer.appendChild(playIcon);
+        }
+
+    } else {
+        video.play();
+
+        if (playIcon) {
+            playIcon.remove();
         }
     }
 }
