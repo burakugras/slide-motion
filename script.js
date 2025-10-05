@@ -99,8 +99,6 @@ const loadMore = async () => {
         console.log("You have reached last video.");
         observer.disconnect();
     }
-
-    // isLoading = false;
 }
 
 const setupObserver = () => {
@@ -126,7 +124,7 @@ const setupObserver = () => {
 
                 if (video.readyState >= 2) { // 2 = HAVE_CURRENT_DATA means : The request has been sent
                     video.play().catch(() => { });
-
+                    video.currentTime = 0;
 
                 } else {
                     video.addEventListener("canplay", () => {
@@ -134,10 +132,6 @@ const setupObserver = () => {
                     }, { once: true });
 
                 }
-
-                // playIcons.forEach(icon => {
-                //     icon.remove();
-                // });
             } else {
                 video.pause();
             }
@@ -297,8 +291,6 @@ const renderVideos = (videos) => {
     isLoading = false;
     optimizePage();
 };
-
-// console.log(isMuted);
 
 const addEvents = () => {
     document.addEventListener('click', (event) => {
