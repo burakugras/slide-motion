@@ -118,8 +118,13 @@ const setupObserver = () => {
 
                 const container = video.closest('.video-player-container');
                 const playIcon = container?.querySelector('.play-icon');
+                const loadingContainer = video.closest('.loading-container');
                 if (playIcon) {
                     playIcon.remove();
+                }
+
+                if (loadingContainer) {
+                    loadingContainer.remove();
                 }
 
                 if (video.readyState >= 2) { // 2 = HAVE_CURRENT_DATA means : The request has been sent
@@ -299,6 +304,8 @@ const addEvents = () => {
         handleSaveButton(event);
         handleTagContainer(event);
         handlePlayButton(event);
+        handleCommentButton(event);
+        handleCloseCommentContainer(event);
     })
 
 }
@@ -401,6 +408,42 @@ const handlePlayButton = (event) => {
         }
     }
 }
+
+const handleCommentButton = (event) => {
+    const commentButton = event.target.closest('.comment-button');
+
+    if (commentButton) {
+        const videoPlayerContainer = event.target.closest('.video-player-container');
+        const commentContainer = document.createElement('div');
+        commentContainer.classList.add('comment-container');
+
+        const closeCommentButton = document.createElement('span');
+        closeCommentButton.className = 'close-comment-button';
+        closeCommentButton.textContent = 'X';
+
+        commentContainer.append(closeCommentButton);
+        videoPlayerContainer.append(commentContainer);
+    }
+}
+
+const handleCloseCommentContainer = (event) => {
+    const closeButton = event.target.closest('.close-comment-button');
+    const commentContainer = event.target.closest('.comment-container');
+
+    if (closeButton) {
+        commentContainer.remove();
+    }
+
+    if (!commentContainer) {
+        const commentContainers = document.querySelectorAll('.comment-container');
+        commentContainers.forEach(container => {
+            if (!event.target.closest('.comment-button')) {
+                container.remove();
+            }
+        });
+    }
+}
+
 
 const optimizePage = () => {
     const slider = document.querySelector('.slider');
