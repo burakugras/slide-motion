@@ -417,11 +417,29 @@ const handleCommentButton = (event) => {
         const commentContainer = document.createElement('div');
         commentContainer.classList.add('comment-container');
 
-        const closeCommentButton = document.createElement('span');
-        closeCommentButton.className = 'close-comment-button';
-        closeCommentButton.textContent = 'X';
+        const commentsInsideContainer = document.createElement('div');
+        commentsInsideContainer.classList.add('comments-inside-container');
 
-        commentContainer.append(closeCommentButton);
+        const headerCommentContainer = document.createElement('div');
+        headerCommentContainer.classList.add('header-comment-container');
+
+        const header = document.createElement('h2');
+        header.classList.add('comments-header');
+        header.textContent = "Comments";
+
+        const closeCommentButton = document.createElement('img');
+        closeCommentButton.className = 'close-comment-button';
+        closeCommentButton.src = 'icons/close-icon.png';
+
+        const horizontalLine = document.createElement('hr');
+        horizontalLine.classList.add('seperator-line');
+
+        headerCommentContainer.append(header, closeCommentButton);
+        commentsInsideContainer.append(headerCommentContainer, horizontalLine);
+
+
+
+        commentContainer.append(commentsInsideContainer);
         videoPlayerContainer.append(commentContainer);
     }
 }
