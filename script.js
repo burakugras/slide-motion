@@ -434,30 +434,42 @@ const handleCommentButton = (event) => {
         const horizontalLine = document.createElement('hr');
         horizontalLine.classList.add('seperator-line');
 
+        const comments = document.createElement('div');
+        comments.classList.add('comments');
+
         headerCommentContainer.append(header, closeCommentButton);
-        commentsInsideContainer.append(headerCommentContainer, horizontalLine);
-
-
+        commentsInsideContainer.append(headerCommentContainer, horizontalLine, comments);
 
         commentContainer.append(commentsInsideContainer);
         videoPlayerContainer.append(commentContainer);
+
+        requestAnimationFrame(() => {
+            commentContainer.classList.add('active');
+        })
+
+        loadComments();
     }
 }
 
 const handleCloseCommentContainer = (event) => {
     const closeButton = event.target.closest('.close-comment-button');
     const commentContainer = event.target.closest('.comment-container');
+    const commentButton = event.target.closest('.comment-button');
 
-    if (closeButton) {
-        commentContainer.remove();
+    if (closeButton && commentContainer) {
+        commentContainer.classList.remove('active');
+        commentContainer.addEventListener('transitionend', () => {
+            commentContainer.remove();
+        }, { once: true });
     }
 
-    if (!commentContainer) {
+    if (!commentContainer && !commentButton) {
         const commentContainers = document.querySelectorAll('.comment-container');
         commentContainers.forEach(container => {
-            if (!event.target.closest('.comment-button')) {
+            container.classList.remove('active');
+            container.addEventListener('transitionend', () => {
                 container.remove();
-            }
+            }, { once: true });
         });
     }
 }
