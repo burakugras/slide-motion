@@ -155,6 +155,26 @@ h2.comments-header {
   box-sizing: border-box;
   padding: 15px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+}
+
+.comment-right-div {
+  display: flex;
+  flex-direction: column;
 }
 
 .header-comment-container {

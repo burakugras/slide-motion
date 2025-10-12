@@ -4,6 +4,7 @@ let page = 1;
 const pageSize = 3;
 let isLoading = false;
 let observer;
+let allVideos = [];
 
 let script = document.createElement('script');
 script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
@@ -66,9 +67,11 @@ const fetchVideos = async (page, pageSize) => {
             const enhancedVideos = videos.map((video) => ({
                 ...video,
                 isLiked: false,
-                isSaved: false
+                isSaved: false,
+                commentList: generateMockComments(video.id, video.comments)
             }));
 
+            allVideos.push(...enhancedVideos);
             renderVideos(enhancedVideos);
         }
         handleVideos(data.hits);
@@ -77,6 +80,67 @@ const fetchVideos = async (page, pageSize) => {
         console.log(error.message);
         return null;
     }
+}
+
+const generateMockComments = (videoId, commentCount) => {
+    const mockUsers = [
+        'excalibur_17', 'sarah_connor', 'neo_matrix', 'dragon_slayer',
+        'pixel_artist', 'code_ninja', 'music_lover', 'travel_bug',
+        'coffee_addict', 'night_writer', 'urban_explorer', 'lazy_panda',
+        'cosmic_dreamer', 'sunset_chaser', 'tech_guru', 'mystic_fox',
+        'iron_heart', 'silent_thinker', 'happy_camper', 'data_diver',
+        'midnight_coder', 'bookworm_91', 'astro_wanderer', 'chef_mode_on',
+        'retro_player', 'aqua_spirit', 'mountain_rider', 'zen_creator',
+        'cinema_buff', 'sketch_master'
+    ];
+
+    const mockCommentTexts = [
+        'That was awesome!!!',
+        'Love this content! 😍',
+        'Amazing work, keep it up!',
+        'This is so cool!',
+        'Can\'t stop watching this',
+        'Absolutely beautiful',
+        'Mind blowing! 🤯',
+        'Best video I\'ve seen today',
+        'This deserves way more likes 👏',
+        'Pure talent right here!',
+        'Can’t get enough of this 🔥',
+        'Wow, this made my day!',
+        'How do you even do that?!',
+        'Legendary stuff 😎',
+        'Such good vibes 💫',
+        'This is art ❤️',
+        'I’m definitely sharing this!',
+        'You nailed it again!',
+        'Unreal quality!',
+        'This should go viral!',
+        'Keep doing what you do!',
+        'The attention to detail is insane!',
+        'So underrated!',
+        'Instant follow 🚀',
+        'Your creativity is unmatched!',
+        'Simply amazing!',
+        'Watching this on repeat 🔁',
+        'Never disappoints!',
+        'I’m obsessed with this 😍',
+        'Speechless... just wow!'
+    ];
+
+    const comments = [];
+    const numComments = Math.min(commentCount, 10);
+
+    for (let i = 0; i < numComments; i++) {
+        comments.push({
+            id: `${videoId}_comment_${i}`,
+            userName: mockUsers[Math.floor(Math.random() * mockUsers.length)],
+            text: mockCommentTexts[Math.floor(Math.random() * mockCommentTexts.length)],
+            avatar: '/icons/user-icon.png',
+            timeStamp: Date.now() - Math.random() * 86400000
+        });
+    }
+
+    return comments;
 }
 
 const loadMore = async () => {
@@ -130,6 +194,9 @@ const setupObserver = () => {
                 if (video.readyState >= 2) { // 2 = HAVE_CURRENT_DATA means : The request has been sent
                     video.play().catch(() => { });
                     video.currentTime = 0;
+                    document.querySelectorAll('.comment-container').forEach(container => {
+                        container.remove();
+                    })
 
                 } else {
                     video.addEventListener("canplay", () => {
@@ -150,6 +217,8 @@ const renderVideos = (videos) => {
     videos.forEach(video => {
         const videoCard = document.createElement('div');
         videoCard.classList.add('video-card');
+
+        videoCard.dataset.videoId = video.id;
 
         const videoPlayerContainer = document.createElement('div');
         videoPlayerContainer.classList.add('video-player-container');
@@ -414,6 +483,9 @@ const handleCommentButton = (event) => {
 
     if (commentButton) {
         const videoPlayerContainer = event.target.closest('.video-player-container');
+        const videoCard = event.target.closest('.video-card');
+        const videoId = parseInt(videoCard.dataset.videoId);
+
         const commentContainer = document.createElement('div');
         commentContainer.classList.add('comment-container');
 
@@ -447,8 +519,46 @@ const handleCommentButton = (event) => {
             commentContainer.classList.add('active');
         })
 
-        loadComments();
+        renderComments(videoId, comments);
     }
+}
+
+const renderComments = async (videoId, commentsContainer) => {
+    const video = allVideos.find(v => v.id === videoId);
+
+    if (!video || !video.commentList || video.commentList.length === 0) {
+
+        return;
+    }
+
+    video.commentList.forEach(comment => {
+        const commentDiv = document.createElement('div');
+        commentDiv.classList.add('comment');
+
+        const commentLeftDiv = document.createElement('div');
+        commentLeftDiv.classList.add('comment-left-div');
+        const commentRightDiv = document.createElement('div');
+        commentRightDiv.classList.add('comment-right-div');
+
+        const avatar = document.createElement('img');
+        avatar.classList.add('avatar');
+        avatar.src = comment.avatar;
+        avatar.alt = 'user avatar';
+
+        const userName = document.createElement('span');
+        userName.classList.add('comment-user-name');
+        userName.textContent = comment.userName;
+
+        const commentContent = document.createElement('span');
+        commentContent.classList.add('comment-content');
+        commentContent.textContent = comment.text;
+
+        commentLeftDiv.append(avatar);
+        commentRightDiv.append(userName, commentContent);
+        commentDiv.append(commentLeftDiv, commentRightDiv);
+
+        commentsContainer.append(commentDiv);
+    })
 }
 
 const handleCloseCommentContainer = (event) => {
