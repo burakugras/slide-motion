@@ -397,10 +397,36 @@ const renderVideos = (videos) => {
         const tagContainer = document.createElement('div');
         tagContainer.classList.add('info', 'tag-container');
 
-        video.tags.split(',').forEach((tag) => {
-            const trimmedTag = tag.trim();
-            tagContainer.textContent += `#${trimmedTag} `;
-        });
+        const allTags = video.tags.split(',');
+
+        if (allTags.length > 8) {
+            let shortText = '';
+            let longText = '';
+
+            allTags.slice(0, 8).forEach(tag => {
+                const trimmedTag = tag.trim();
+                shortText += `#${trimmedTag} `;
+            });
+
+            allTags.forEach(tag => {
+                const trimmedTag = tag.trim();
+                longText += `#${trimmedTag} `;
+            });
+
+            tagContainer.textContent = shortText + '...';
+
+            tagContainer.addEventListener('click', () => {
+                const isExpanded = tagContainer.classList.toggle('expanded');
+                tagContainer.textContent = isExpanded ? longText : shortText + '...';
+            })
+
+        } else {
+            allTags.forEach((tag) => {
+                const trimmedTag = tag.trim();
+                tagContainer.textContent += `#${trimmedTag} `;
+                tagContainer.style.cursor = 'default';
+            });
+        }
 
         infoContainer.append(userContainer, tagContainer);
 
@@ -421,7 +447,7 @@ const addEvents = () => {
         handleMuteButton(event);
         handleLikeButton(event);
         handleSaveButton(event);
-        handleTagContainer(event);
+        // handleTagContainer(event);
         handlePlayButton(event);
         handleCommentButton(event);
         handleCloseCommentContainer(event);
@@ -487,19 +513,19 @@ const handleSaveButton = (event) => {
     }
 }
 
-const handleTagContainer = (event) => {
-    const tagContainer = event.target.closest(".tag-container");
+// const handleTagContainer = (event) => {
+//     const tagContainer = event.target.closest(".tag-container");
 
-    if (tagContainer) {
-        if (tagContainer.classList.contains('expanded')) {
-            tagContainer.style.maxHeight = '3rem';
-            tagContainer.classList.remove('expanded');
-        } else {
-            tagContainer.style.maxHeight = tagContainer.scrollHeight + 'px';
-            tagContainer.classList.add('expanded');
-        }
-    }
-}
+//     if (tagContainer) {
+//         if (tagContainer.classList.contains('expanded')) {
+//             tagContainer.style.maxHeight = '3rem';
+//             tagContainer.classList.remove('expanded');
+//         } else {
+//             tagContainer.style.maxHeight = tagContainer.scrollHeight + 'px';
+//             tagContainer.classList.add('expanded');
+//         }
+//     }
+// }
 
 const handlePlayButton = (event) => {
     const video = event.target.closest('.video-player');

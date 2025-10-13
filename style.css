@@ -371,14 +371,16 @@ span.comment-content {
 .tag-container {
   color: white;
   font-weight: 300;
-  max-height: 1.5rem;
+  max-height: 3rem;
   overflow: hidden;
   transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   line-height: 1.5;
+  word-wrap: break-word;
 }
 
 .tag-container.expanded {
+  max-height: 500px;
   white-space: normal;
   text-overflow: clip;
 }
