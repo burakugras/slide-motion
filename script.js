@@ -200,10 +200,10 @@ const timeAgo = (timeStamp) => {
     const diffHour = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHour / 24);
 
-    if (diffDay > 0) return `${diffDay} gün önce`;
-    if (diffHour > 0) return `${diffHour} saat önce`;
-    if (diffMin > 0) return `${diffMin} dakika önce`;
-    return `${diffSec} saniye önce`;
+    if (diffDay > 0) return `${diffDay} days ago`;
+    if (diffHour > 0) return `${diffHour} hours ago`;
+    if (diffMin > 0) return `${diffMin} minutes ago`;
+    return `${diffSec} seconds ago`;
 }
 
 const loadMore = async () => {
@@ -626,8 +626,10 @@ const renderComments = async (videoId, commentsContainer) => {
 
         const commentLeftDiv = document.createElement('div');
         commentLeftDiv.classList.add('comment-left-div');
+
         const commentMidDiv = document.createElement('div');
         commentMidDiv.classList.add('comment-mid-div');
+
         const commentRightDiv = document.createElement('div');
         commentRightDiv.classList.add('comment-right-div');
 
@@ -635,6 +637,32 @@ const renderComments = async (videoId, commentsContainer) => {
         avatar.classList.add('avatar');
         avatar.src = comment.avatar;
         avatar.alt = 'user avatar';
+
+        const commentMidHeaderContainer = document.createElement('div');
+        commentMidHeaderContainer.classList.add('mid-header');
+
+        const commentMidBottomContainer = document.createElement('div');
+        commentMidBottomContainer.classList.add('mid-bottom-container');
+
+        const commentLikeIcon = document.createElement('img');
+        commentLikeIcon.classList.add('comment-like-icon');
+        commentLikeIcon.src = '/icons/comment-like-icon.png';
+        commentLikeIcon.alt = 'like';
+        const commentLikeCount = document.createElement('span');
+        commentLikeCount.classList.add('comment-like-count');
+        const randomLike = Math.floor(Math.random() * 100);
+        commentLikeCount.textContent = `${randomLike}`;
+
+        const commentDislikeIcon = document.createElement('img');
+        commentDislikeIcon.classList.add('comment-dislike-icon');
+        commentDislikeIcon.src = '/icons/comment-dislike-icon.png';
+        commentDislikeIcon.alt = 'dislike';
+        const commentDislikeCount = document.createElement('span');
+        commentDislikeCount.classList.add('comment-dislike-count');
+        const randomDislike = Math.floor(Math.random() * 10);
+        commentDislikeCount.textContent = `${randomDislike}`;
+
+        commentMidBottomContainer.append(commentLikeIcon, commentLikeCount, commentDislikeIcon, commentDislikeCount)
 
         const userName = document.createElement('span');
         userName.classList.add('comment-user-name');
@@ -668,9 +696,11 @@ const renderComments = async (videoId, commentsContainer) => {
         createdDate.classList.add('created-date');
         createdDate.textContent = timeAgo(comment.timeStamp);
 
+        commentMidHeaderContainer.append(userName, createdDate);
+
         commentLeftDiv.append(avatar);
-        commentMidDiv.append(userName, commentContent);
-        commentRightDiv.append(createdDate);
+        commentMidDiv.append(commentMidHeaderContainer, commentContent, commentMidBottomContainer);
+        // commentRightDiv.append(createdDate);
         commentDiv.append(commentLeftDiv, commentMidDiv, commentRightDiv);
 
         commentsContainer.append(commentDiv);

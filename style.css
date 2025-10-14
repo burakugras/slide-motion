@@ -9,7 +9,7 @@ body {
   justify-content: center;
   height: 100vh;
   overflow: hidden;
-  background-color: gray;
+  background: linear-gradient(135deg, #c9b8a8, #b7a99a, #b19e8c, #a09c98);
   font-family: "Quicksand", sans-serif;
 }
 
@@ -153,7 +153,7 @@ h2.comments-header {
   height: 100%;
   /* background-color: tomato; */
   box-sizing: border-box;
-  padding: 15px;
+  padding: 15px 15px 15px 5px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -232,7 +232,37 @@ span.comment-content {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  /* gap: 5px; */
+  gap: 3px;
+}
+
+.mid-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mid-bottom-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-top: 5px;
+  gap: 2px;
+}
+
+.mid-bottom-container img {
+  max-height: 25px;
+  max-width: 25px;
+  width: 25px;
+  height: 25px;
+}
+
+img.comment-dislike-icon {
+  padding-left: 10px;
+}
+
+.mid-bottom-container span {
+  font-size: 0.8rem;
 }
 
 .comment-right-div {
