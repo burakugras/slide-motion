@@ -412,7 +412,7 @@ const renderVideos = (videos) => {
 
         const allTags = video.tags.split(',');
 
-        if (allTags.length > 8) {
+        if (allTags.length > 4) {
             let shortText = '';
             let longText = '';
 
@@ -594,12 +594,30 @@ const handleCommentButton = (event) => {
 
         const horizontalLine = document.createElement('hr');
         horizontalLine.classList.add('seperator-line');
+        const bottomHorizontalLine = document.createElement('hr');
+        bottomHorizontalLine.classList.add('seperator-line');
 
         const comments = document.createElement('div');
         comments.classList.add('comments');
 
+        const addCommentContainer = document.createElement('div');
+        addCommentContainer.classList.add('add-comment-container');
+
+        const inputBottom = document.createElement('input');
+        inputBottom.classList.add('input-bottom');
+        inputBottom.name = 'comment-input';
+        inputBottom.placeholder = 'please input your comment...';
+
+        const enterButton = document.createElement('img');
+        enterButton.classList.add('enter-icon');
+        enterButton.src = '/icons/enter-icon.png'
+        enterButton.alt = 'enter';
+
+        addCommentContainer.append(inputBottom, enterButton);
+
+
         headerCommentContainer.append(header, closeCommentButton);
-        commentsInsideContainer.append(headerCommentContainer, horizontalLine, comments);
+        commentsInsideContainer.append(headerCommentContainer, horizontalLine, comments, bottomHorizontalLine, addCommentContainer);
 
         commentContainer.append(commentsInsideContainer);
         videoPlayerContainer.append(commentContainer);
@@ -612,7 +630,7 @@ const handleCommentButton = (event) => {
     }
 }
 
-const renderComments = async (videoId, commentsContainer) => {
+const renderComments = (videoId, commentsContainer) => {
     const video = allVideos.find(v => v.id === videoId);
 
     if (!video || !video.commentList || video.commentList.length === 0) {
