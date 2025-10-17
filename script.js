@@ -575,6 +575,13 @@ const handleCommentButton = (event) => {
         const videoCard = event.target.closest('.video-card');
         const videoId = parseInt(videoCard.dataset.videoId);
 
+        const existingContainers = document.querySelectorAll('.comment-container');
+        existingContainers.forEach(container => container.remove());
+
+        const slider = commentButton.closest('.slider');
+
+        slider.style.overflowY = 'hidden';
+
         const commentContainer = document.createElement('div');
         commentContainer.classList.add('comment-container');
 
@@ -614,7 +621,6 @@ const handleCommentButton = (event) => {
         enterButton.alt = 'enter';
 
         addCommentContainer.append(inputBottom, enterButton);
-
 
         headerCommentContainer.append(header, closeCommentButton);
         commentsInsideContainer.append(headerCommentContainer, horizontalLine, comments, bottomHorizontalLine, addCommentContainer);
@@ -730,11 +736,20 @@ const handleCloseCommentContainer = (event) => {
     const commentContainer = event.target.closest('.comment-container');
     const commentButton = event.target.closest('.comment-button');
 
+    const slider = (commentContainer || event.target).closest('.slider') || document.querySelector('.slider');
+
+    const restoreScroll = () => {
+        if (slider) slider.style.overflowY = 'auto';
+    }
+
     if (closeButton && commentContainer) {
         commentContainer.classList.remove('active');
         commentContainer.addEventListener('transitionend', () => {
             commentContainer.remove();
         }, { once: true });
+        if (!document.querySelector('.comment-container.active')) {
+            restoreScroll();
+        }
     }
 
     if (!commentContainer && !commentButton) {
@@ -745,6 +760,7 @@ const handleCloseCommentContainer = (event) => {
                 container.remove();
             }, { once: true });
         });
+        restoreScroll();
     }
 }
 
