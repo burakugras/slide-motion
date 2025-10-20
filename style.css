@@ -486,9 +486,8 @@ span.created-date {
   width: 0%;
   height: 100%;
   background-color: red;
-  transition: width 0.25s linear;
+  /* transition: width 0.25s linear; */
 }
-
 
 .tag-container {
   color: white;

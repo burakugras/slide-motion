@@ -316,13 +316,19 @@ const renderVideos = (videos) => {
         videoPlayer.addEventListener('canplay', canPlayHandler, { once: true });
 
         videoPlayer.addEventListener('timeupdate', () => {
-            const progressPercent = (videoPlayer.currentTime / video.duration) * 100;
             const progressBar = videoPlayerContainer.querySelector('.progress-bar');
+            if (!progressBar) return;
 
-            if (progressBar) {
-                progressBar.style.width = `${progressPercent}%`;
+            const progressPercent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+
+            progressBar.style.transition = 'width 0.25s linear';
+            progressBar.style.width = `${progressPercent}%`;
+
+            if (videoPlayer.currentTime === 0) {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
             }
-        })
+        });
 
         observer.observe(videoPlayer);
 
@@ -659,12 +665,16 @@ const handleProgressbar = (event) => {
     if (progressBarContainer) {
         const videoPlayerContainer = progressBarContainer.closest('.video-player-container');
         const videoPlayer = videoPlayerContainer.querySelector('.video-player');
+        const progressBar = progressBarContainer.querySelector('.progress-bar');
 
         const clickX = event.clientX - progressBarContainer.getBoundingClientRect().left;
         const containerWidth = progressBarContainer.offsetWidth;
         const seekTime = (clickX / containerWidth) * videoPlayer.duration;
 
+        progressBar.style.transition = 'none';
         videoPlayer.currentTime = seekTime;
+
+        progressBar.style.width = `${(seekTime / videoPlayer.duration) * 100}%`;
     }
 }
 
