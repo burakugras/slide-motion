@@ -315,6 +315,15 @@ const renderVideos = (videos) => {
 
         videoPlayer.addEventListener('canplay', canPlayHandler, { once: true });
 
+        videoPlayer.addEventListener('timeupdate', () => {
+            const progressPercent = (videoPlayer.currentTime / video.duration) * 100;
+            const progressBar = videoPlayerContainer.querySelector('.progress-bar');
+
+            if (progressBar) {
+                progressBar.style.width = `${progressPercent}%`;
+            }
+        })
+
         observer.observe(videoPlayer);
 
         const buttonContainer = document.createElement('div');
@@ -443,8 +452,15 @@ const renderVideos = (videos) => {
 
         infoContainer.append(userContainer, tagContainer);
 
+        const progressBarContainer = document.createElement('div');
+        progressBarContainer.classList.add('progress-bar-container');
+        const progressBar = document.createElement('div');
+        progressBar.classList.add('progress-bar');
+
+        progressBarContainer.append(progressBar);
+
         buttonContainer.append(topContainer, bottomContainer);
-        videoPlayerContainer.append(videoPlayer, buttonContainer, infoContainer);
+        videoPlayerContainer.append(videoPlayer, buttonContainer, infoContainer, progressBarContainer);
         videoCard.append(videoPlayerContainer);
 
         const slider = document.querySelector('.slider');
@@ -464,6 +480,7 @@ const addEvents = () => {
         handlePlayButton(event);
         handleCommentButton(event);
         handleCloseCommentContainer(event);
+        handleProgressbar(event);
     })
 
 }
@@ -633,6 +650,21 @@ const handleCommentButton = (event) => {
         })
 
         renderComments(videoId, comments);
+    }
+}
+
+const handleProgressbar = (event) => {
+    const progressBarContainer = event.target.closest('.progress-bar-container');
+
+    if (progressBarContainer) {
+        const videoPlayerContainer = progressBarContainer.closest('.video-player-container');
+        const videoPlayer = videoPlayerContainer.querySelector('.video-player');
+
+        const clickX = event.clientX - progressBarContainer.getBoundingClientRect().left;
+        const containerWidth = progressBarContainer.offsetWidth;
+        const seekTime = (clickX / containerWidth) * videoPlayer.duration;
+
+        videoPlayer.currentTime = seekTime;
     }
 }
 
