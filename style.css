@@ -66,7 +66,7 @@ body {
   min-height: 100vh;
   margin: 0;
   scroll-snap-align: start;
-  /* background-color: rgb(33, 85, 145); */
+  background-color: rgb(66, 66, 66);
 }
 
 .video-player-container {
