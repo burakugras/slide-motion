@@ -291,6 +291,7 @@ const setupObserver = () => {
                 })
 
                 if (video.readyState >= 2) {
+                    video.currentTime = 0;
                     if (loadingContainer) {
                         loadingContainer.remove();
                     }
@@ -348,20 +349,59 @@ const renderVideos = (videos) => {
         videoPlayer._canPlayHandler = canPlayHandler;
         videoPlayer.addEventListener('canplay', canPlayHandler, { once: true });
 
-        videoPlayer.addEventListener('timeupdate', () => {
+        let animationFrameId = 0;
+        let lastTime = 0;
+
+        const updateProgressBar = () => {
             const progressBar = videoPlayerContainer.querySelector('.progress-bar');
-            if (!progressBar) return;
+            if (!progressBar || !videoPlayer.duration) {
+                animationFrameId = requestAnimationFrame(updateProgressBar);
+                return;
+            }
 
-            const progressPercent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            const currentTime = videoPlayer.currentTime;
+            const duration = videoPlayer.duration;
+            const currentProgress = (currentTime / duration) * 100;
 
-            progressBar.style.transition = 'width 0.25s linear';
-            progressBar.style.width = `${progressPercent}%`;
+            if (currentTime < lastTime && lastTime > duration * 0.8) {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = `0%`;
+            } else {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = `${Math.min(currentProgress, 100)}%`;
+            }
 
-            if (videoPlayer.currentTime === 0) {
+            lastTime = currentTime;
+
+            if (!videoPlayer.paused) {
+                animationFrameId = requestAnimationFrame(updateProgressBar);
+            }
+        };
+
+        videoPlayer.addEventListener('play', () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            lastTime = videoPlayer.currentTime;
+            animationFrameId = requestAnimationFrame(updateProgressBar);
+        });
+
+        videoPlayer.addEventListener('pause', () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        });
+
+        videoPlayer.addEventListener('loadedmetadata', () => {
+            const progressBar = videoPlayer.querySelector('.progress-bar');
+            if (progressBar) {
                 progressBar.style.transition = 'none';
                 progressBar.style.width = '0%';
             }
-        });
+            lastTime = 0;
+        })
 
         observer.observe(videoPlayer);
 
