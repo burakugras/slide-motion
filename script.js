@@ -395,7 +395,7 @@ const renderVideos = (videos) => {
         });
 
         videoPlayer.addEventListener('loadedmetadata', () => {
-            const progressBar = videoPlayer.querySelector('.progress-bar');
+            const progressBar = videoPlayerContainer.querySelector('.progress-bar');
             if (progressBar) {
                 progressBar.style.transition = 'none';
                 progressBar.style.width = '0%';
