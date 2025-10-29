@@ -668,6 +668,12 @@ const handleCommentButton = (event) => {
         const commentsInsideContainer = document.createElement('div');
         commentsInsideContainer.classList.add('comments-inside-container');
 
+        const dragHandle = document.createElement('div');
+        dragHandle.classList.add('drag-handle');
+        const dragIcon = document.createElement('div');
+        dragIcon.classList.add('drag-icon');
+        dragHandle.appendChild(dragIcon);
+
         const headerCommentContainer = document.createElement('div');
         headerCommentContainer.classList.add('header-comment-container');
 
@@ -703,7 +709,7 @@ const handleCommentButton = (event) => {
         addCommentContainer.append(inputBottom, enterButton);
 
         headerCommentContainer.append(header, closeCommentButton);
-        commentsInsideContainer.append(headerCommentContainer, horizontalLine, comments, bottomHorizontalLine, addCommentContainer);
+        commentsInsideContainer.append(dragHandle, headerCommentContainer, horizontalLine, comments, bottomHorizontalLine, addCommentContainer);
 
         commentContainer.append(commentsInsideContainer);
         videoPlayerContainer.append(commentContainer);
@@ -712,8 +718,66 @@ const handleCommentButton = (event) => {
             commentContainer.classList.add('active');
         })
 
+        setupDragHandle(commentContainer, dragHandle);
+
         renderComments(videoId, comments);
     }
+}
+
+const setupDragHandle = (commentContainer, dragHandle) => {
+    let isDragging = false;
+    let startY = 0;
+    let startHeight = 0;
+    const minHeight = 150;
+    const maxHeight = window.innerHeight * 0.85;
+
+    const onMouseDown = (e) => {
+        isDragging = true;
+        startY = e.clientY || e.touches[0].clientY;
+        startHeight = commentContainer.offsetHeight;
+
+        commentContainer.style.transition = 'none';
+        dragHandle.classList.add('dragging');
+
+        e.preventDefault();
+    };
+
+    const onMouseMove = (e) => {
+        if (!isDragging) return;
+
+        const currentY = e.clientY || e.touches[0].clientY;
+        const deltaY = startY - currentY;
+        let newHeight = startHeight + deltaY;
+
+        newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+
+        commentContainer.style.height = `${newHeight}px`;
+
+        e.preventDefault();
+    };
+
+    const onMouseUp = () => {
+        if (!isDragging) return;
+
+        isDragging = false;
+        commentContainer.style.transition = '';
+        dragHandle.classList.remove('dragging');
+    };
+
+    dragHandle.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    dragHandle.addEventListener('touchstart', onMouseDown);
+    document.addEventListener('touchmove', onMouseMove, { passive: false });
+    document.addEventListener('touchend', onMouseUp);
+
+    commentContainer._dragCleanup = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('touchmove', onMouseMove);
+        document.removeEventListener('touchend', onMouseUp);
+    };
 }
 
 const handleProgressbar = (event) => {
@@ -839,9 +903,16 @@ const handleCloseCommentContainer = (event) => {
         if (slider) slider.style.overflowY = 'auto';
     }
 
+    const cleanUpContainer = (container) => {
+        if (container._dragCleanup) {
+            container._dragCleanup();
+        }
+    }
+
     if (closeButton && commentContainer) {
         commentContainer.classList.remove('active');
         commentContainer.addEventListener('transitionend', () => {
+            cleanUpContainer(commentContainer);
             commentContainer.remove();
         }, { once: true });
         if (!document.querySelector('.comment-container.active')) {
@@ -854,6 +925,7 @@ const handleCloseCommentContainer = (event) => {
         commentContainers.forEach(container => {
             container.classList.remove('active');
             container.addEventListener('transitionend', () => {
+                cleanUpContainer(container);
                 container.remove();
             }, { once: true });
         });
