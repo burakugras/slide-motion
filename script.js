@@ -354,6 +354,8 @@ const renderVideos = (videos) => {
 
         const updateProgressBar = () => {
             const progressBar = videoPlayerContainer.querySelector('.progress-bar');
+            const durationDisplay = videoPlayerContainer.querySelector('.time-text');
+
             if (!progressBar || !videoPlayer.duration) {
                 animationFrameId = requestAnimationFrame(updateProgressBar);
                 return;
@@ -369,6 +371,17 @@ const renderVideos = (videos) => {
             } else {
                 progressBar.style.transition = 'none';
                 progressBar.style.width = `${Math.min(currentProgress, 100)}%`;
+            }
+
+            if (durationDisplay) {
+                const formatTime = (seconds) => {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                };
+
+                durationDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
             }
 
             lastTime = currentTime;
@@ -531,6 +544,15 @@ const renderVideos = (videos) => {
 
         infoContainer.append(userContainer, tagContainer);
 
+        const timeContainer = document.createElement('div');
+        timeContainer.classList.add('time-container');
+
+        const timeText = document.createElement('span');
+        timeText.classList.add('time-text');
+        timeText.textContent = `0:00 / ${video.duration}`;
+
+        timeContainer.append(timeText);
+
         const progressBarContainer = document.createElement('div');
         progressBarContainer.classList.add('progress-bar-container');
         const progressBar = document.createElement('div');
@@ -539,7 +561,7 @@ const renderVideos = (videos) => {
         progressBarContainer.append(progressBar);
 
         buttonContainer.append(topContainer, bottomContainer);
-        videoPlayerContainer.append(videoPlayer, buttonContainer, infoContainer, progressBarContainer);
+        videoPlayerContainer.append(videoPlayer, buttonContainer, infoContainer, timeContainer, progressBarContainer);
         videoCard.append(videoPlayerContainer);
 
         const slider = document.querySelector('.slider');

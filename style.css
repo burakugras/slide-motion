@@ -497,6 +497,17 @@ span.created-date {
   transition: all 0.5s ease;
 }
 
+.time-container {
+  position: absolute;
+  height: 30px;
+  z-index: 6;
+  bottom: 0;
+  right: 10px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 450;
+}
+
 .progress-bar-container {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.3);
