@@ -313,6 +313,8 @@ const setupObserver = () => {
 let isMuted = true;
 
 const renderVideos = (videos) => {
+    const likedVideoIDs = JSON.parse(localStorage.getItem('likes'));
+
     videos.forEach(video => {
         const videoCard = document.createElement('div');
         videoCard.classList.add('video-card');
@@ -441,13 +443,15 @@ const renderVideos = (videos) => {
 
         let like = video.isLiked;
 
+        const localHasId = likedVideoIDs.includes(video.id);
+
         const likeButton = document.createElement('div');
         likeButton.classList.add('btn', 'like-button');
 
         const likeIcon = document.createElement('img');
         likeIcon.classList.add('like-icon');
         likeIcon.dataset.liked = like;
-        likeIcon.src = like ? '/icons/liked-icon.png' : '/icons/like-icon.png';
+        likeIcon.src = (like || localHasId) ? '/icons/liked-icon.png' : '/icons/like-icon.png';
         const likeCount = document.createElement('span');
         likeCount.classList.add('like-count')
         likeCount.textContent = video.likes;
@@ -607,10 +611,19 @@ const handleMuteButton = (event) => {
     }
 }
 
+const saveLikedVideos = (favoriteVideoIDs) => {
+    localStorage.setItem('likes', JSON.stringify(favoriteVideoIDs));
+}
+
 const handleLikeButton = (event) => {
+    const likes = JSON.parse(localStorage.getItem('likes')) || [];
+
     const likeButton = event.target.closest('.like-button');
 
     if (likeButton) {
+        const videoCard = likeButton.closest('.video-card');
+        const videoID = parseInt(videoCard.dataset.videoId);
+
         const likeIcon = likeButton.querySelector('.like-icon');
         const likeCount = likeButton.querySelector('.like-count');
 
@@ -619,6 +632,16 @@ const handleLikeButton = (event) => {
 
         isLiked = !isLiked;
         likeIcon.dataset.liked = isLiked;
+
+        if (isLiked) {
+            if (!likes.includes(videoID)) {
+                likes.push(videoID);
+                saveLikedVideos(likes);
+            }
+        } else {
+            const newLikes = likes.filter(id => id !== videoID);
+            saveLikedVideos(newLikes);
+        }
 
         likeIcon.classList.toggle('liked-icon', isLiked);
         likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
