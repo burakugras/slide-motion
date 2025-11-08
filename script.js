@@ -338,7 +338,7 @@ const renderVideos = (videos) => {
         const videoPlayer = document.createElement('video');
         videoPlayer.classList.add('video-player');
         videoPlayer.autoplay = false;
-        videoPlayer.loop = true;
+        videoPlayer.loop = false;
         videoPlayer.playsInline = true;
         videoPlayer.muted = isMuted;
         videoPlayer.preload = "metadata";
@@ -416,6 +416,10 @@ const renderVideos = (videos) => {
                 progressBar.style.width = '0%';
             }
             lastTime = 0;
+        })
+
+        videoPlayer.addEventListener('ended', () => {
+            scrollToNextVideo(videoCard);
         })
 
         observer.observe(videoPlayer);
@@ -731,9 +735,9 @@ const handleCommentButton = (event) => {
         closeCommentButton.src = 'icons/close-icon.png';
 
         const horizontalLine = document.createElement('hr');
-        horizontalLine.classList.add('seperator-line');
+        horizontalLine.classList.add('separator-line');
         const bottomHorizontalLine = document.createElement('hr');
-        bottomHorizontalLine.classList.add('seperator-line');
+        bottomHorizontalLine.classList.add('separator-line');
 
         const comments = document.createElement('div');
         comments.classList.add('comments');
@@ -1049,3 +1053,19 @@ const cleanupVideo = (videoElement) => {
     videoElement.isLiked = null;
     videoElement.isSaved = null;
 }
+
+const scrollToNextVideo = (currentVideoCard) => {
+    const slider = document.querySelector('.slider');
+    const allVideoCards = Array.from(slider.querySelectorAll('.video-card'));
+    const currentIndex = allVideoCards.indexOf(currentVideoCard);
+
+    if (currentIndex !== -1 && currentIndex < allVideoCards.length - 1) {
+        const nextVideoCard = allVideoCards[currentIndex + 1];
+
+        nextVideoCard.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+
+};
