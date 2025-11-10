@@ -6,6 +6,7 @@ let isLoading = false;
 let observer;
 let allVideos = [];
 let currentPlayingVideo = null;
+let isAutoSlideChecked = true;
 
 let script = document.createElement('script');
 script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
@@ -313,7 +314,7 @@ const setupObserver = () => {
 let isMuted = true;
 
 const renderVideos = (videos) => {
-    const likedVideoIDs = JSON.parse(localStorage.getItem('likes'));
+    const likedVideoIDs = JSON.parse(localStorage.getItem('likes')) || [];
 
     videos.forEach(video => {
         const videoCard = document.createElement('div');
@@ -338,7 +339,7 @@ const renderVideos = (videos) => {
         const videoPlayer = document.createElement('video');
         videoPlayer.classList.add('video-player');
         videoPlayer.autoplay = false;
-        videoPlayer.loop = false;
+        videoPlayer.loop = isAutoSlideChecked ? false : true;
         videoPlayer.playsInline = true;
         videoPlayer.muted = isMuted;
         videoPlayer.preload = "metadata";
@@ -419,10 +420,26 @@ const renderVideos = (videos) => {
         })
 
         videoPlayer.addEventListener('ended', () => {
-            scrollToNextVideo(videoCard);
+            if (isAutoSlideChecked) {
+                scrollToNextVideo(videoCard);
+            }
         })
 
         observer.observe(videoPlayer);
+
+        const autoSlideContainer = document.createElement('div');
+        autoSlideContainer.classList.add('auto-slide-container');
+
+        const inputBox = document.createElement('input');
+        inputBox.type = 'checkbox';
+        inputBox.id = `check-auto-${video.id}`;
+        inputBox.checked = isAutoSlideChecked;
+
+        const autoSlideInput = document.createElement('label');
+        autoSlideInput.htmlFor = inputBox.id;
+        autoSlideInput.classList.add('auto-play-button');
+
+        autoSlideContainer.append(inputBox, autoSlideInput);
 
         const buttonContainer = document.createElement('div');
         buttonContainer.classList.add('button-container');
@@ -569,7 +586,7 @@ const renderVideos = (videos) => {
         progressBarContainer.append(progressBar);
 
         buttonContainer.append(topContainer, bottomContainer);
-        videoPlayerContainer.append(videoPlayer, buttonContainer, infoContainer, timeContainer, progressBarContainer);
+        videoPlayerContainer.append(videoPlayer, autoSlideContainer, buttonContainer, infoContainer, timeContainer, progressBarContainer);
         videoCard.append(videoPlayerContainer);
 
         const slider = document.querySelector('.slider');
@@ -589,7 +606,26 @@ const addEvents = () => {
         handleCommentButton(event);
         handleCloseCommentContainer(event);
         handleProgressbar(event);
+        handleAutoSlide(event);
     })
+}
+
+const handleAutoSlide = (event) => {
+    if (event.target.classList.contains('auto-play-button')) {
+        event.preventDefault();
+
+        isAutoSlideChecked = !isAutoSlideChecked;
+        console.log('AutoSlide durumu değişti:', isAutoSlideChecked);
+
+        const allAutoSlideButtons = document.querySelectorAll('.auto-slide-container input[type="checkbox"]');
+        const allVideoPlayers = document.querySelectorAll('.video-player');
+        allVideoPlayers.forEach(videoPlayer => {
+            videoPlayer.loop = isAutoSlideChecked ? false : true;
+        })
+        allAutoSlideButtons.forEach(button => {
+            button.checked = isAutoSlideChecked;
+        });
+    }
 }
 
 const handleMuteButton = (event) => {
@@ -1067,5 +1103,4 @@ const scrollToNextVideo = (currentVideoCard) => {
             block: 'center'
         });
     }
-
 };

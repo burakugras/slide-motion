@@ -397,6 +397,51 @@ span.created-date {
   flex-shrink: 0;
 }
 
+.auto-slide-container {
+  width: 86px;
+  height: 36px;
+  z-index: 5;
+  position: absolute;
+  left: 40px;
+  top: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.auto-play-button {
+  width: 100%;
+  background-color: gray;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 200px;
+}
+
+.auto-play-button::before {
+  position: absolute;
+  content: '';
+  background-color: #f1f1f6;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin: 3px;
+  transition: 0.2s;
+}
+
+input:checked+.auto-play-button {
+  background-color: white
+}
+
+input:checked+.auto-play-button::before {
+  transform: translateX(50px);
+  background-color: gray;
+
+}
+
+.auto-slide-container input {
+  display: none;
+}
+
 .button-container {
   position: absolute;
   top: 20px;
