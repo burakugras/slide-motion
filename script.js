@@ -462,9 +462,9 @@ const renderVideos = (videos) => {
         const bottomContainer = document.createElement('div');
         bottomContainer.classList.add('bottom-container');
 
-        let like = video.isLiked;
+        let like = video.isLiked || likedVideoIDs.includes(video.id);
 
-        const localHasId = likedVideoIDs.includes(video.id);
+        // const localHasId = likedVideoIDs.includes(video.id);
 
         const likeButton = document.createElement('div');
         likeButton.classList.add('btn', 'like-button');
@@ -472,10 +472,10 @@ const renderVideos = (videos) => {
         const likeIcon = document.createElement('img');
         likeIcon.classList.add('like-icon');
         likeIcon.dataset.liked = like;
-        likeIcon.src = (like || localHasId) ? '/icons/liked-icon.png' : '/icons/like-icon.png';
+        likeIcon.src = (like) ? '/icons/liked-icon.png' : '/icons/like-icon.png';
         const likeCount = document.createElement('span');
         likeCount.classList.add('like-count')
-        likeCount.textContent = video.likes;
+        likeCount.textContent = like ? video.likes + 1 : video.likes;
 
         likeButton.append(likeIcon, likeCount);
 
@@ -615,7 +615,7 @@ const handleAutoSlide = (event) => {
         event.preventDefault();
 
         isAutoSlideChecked = !isAutoSlideChecked;
-        console.log('AutoSlide durumu değişti:', isAutoSlideChecked);
+        // console.log('AutoSlide durumu değişti:', isAutoSlideChecked);
 
         const allAutoSlideButtons = document.querySelectorAll('.auto-slide-container input[type="checkbox"]');
         const allVideoPlayers = document.querySelectorAll('.video-player');
