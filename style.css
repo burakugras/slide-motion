@@ -398,8 +398,8 @@ span.created-date {
 }
 
 .auto-slide-container {
-  width: 80px;
-  height: 31px;
+  width: 4.5rem;
+  height: 1.2rem;
   z-index: 5;
   position: absolute;
   left: 40px;
@@ -411,35 +411,47 @@ span.created-date {
 
 .auto-play-button {
   width: 100%;
-  background-color: gray;
   height: 100%;
+  background-color: #ccc;
   cursor: pointer;
   border-radius: 200px;
+  position: relative;
+  transition: background-color 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .auto-play-button::before {
   position: absolute;
   content: '';
-  background-color: #f1f1f6;
-  width: 25px;
-  height: 25px;
+  background-color: #fff;
+  width: 1.8rem;
+  height: 1.8rem;
   border-radius: 50%;
-  margin: 3px;
-  transition: 0.2s;
+  top: 50%;
+  left: 0.15rem;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input:checked+.auto-play-button {
-  background-color: white
+  background-color: #4CAF50;
 }
 
 input:checked+.auto-play-button::before {
-  transform: translateX(50px);
-  background-color: gray;
-
+  left: calc(100% - 1.95rem);
 }
 
 .auto-slide-container input {
   display: none;
+}
+
+.auto-play-button:hover {
+  opacity: 0.9;
+}
+
+.auto-play-button:hover::before {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .button-container {
