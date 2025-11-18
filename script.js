@@ -608,6 +608,48 @@ const addEvents = () => {
         handleProgressbar(event);
         handleAutoSlide(event);
     })
+
+    document.addEventListener('mouseover', (event) => {
+        const container = event.target.closest('.auto-slide-container');
+
+        if (container) {
+            handleShowTooltip(container);
+        }
+    });
+
+    document.addEventListener('mouseout', (event) => {
+        const container = event.target.closest('.auto-slide-container');
+
+        if (container) {
+            handleHideToolTip(container);
+        }
+    });
+}
+
+const handleShowTooltip = (container) => {
+    if (container.querySelector('.auto-slide-description')) return;
+
+    const description = document.createElement('div');
+    description.classList.add('auto-slide-description');
+    description.textContent = `Auto slide is ${isAutoSlideChecked ? 'on' : 'off'}`;
+
+    container.append(description);
+
+    setTimeout(() => {
+        description.classList.add('visible');
+    }, 10);
+}
+
+const handleHideToolTip = (container) => {
+    const description = container.querySelector('.auto-slide-description');
+
+    if (description) {
+        description.classList.remove('visible');
+
+        description.addEventListener('transitionend', () => {
+            description.remove();
+        }, { once: true });
+    }
 }
 
 const handleAutoSlide = (event) => {
