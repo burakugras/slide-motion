@@ -420,6 +420,29 @@ span.created-date {
   opacity: 1;
 }
 
+.current-time-description {
+  visibility: hidden;
+  width: 50px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 5px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 999;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.current-time-description.visible {
+  visibility: visible;
+  opacity: 1;
+}
+
 .auto-slide-container {
   width: 4.5rem;
   height: 1.2rem;

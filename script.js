@@ -611,17 +611,31 @@ const addEvents = () => {
 
     document.addEventListener('mouseover', (event) => {
         const container = event.target.closest('.auto-slide-container');
+        const progressBar = event.target.closest('.progress-bar-container');
 
         if (container) {
             handleShowTooltip(container);
+        }
+
+        if (progressBar) {
+            // handleShowTimeProgressbar(progressBar);
+            // console.log("progress bara girdi");
+            handleShowCurrentTime(progressBar);
         }
     });
 
     document.addEventListener('mouseout', (event) => {
         const container = event.target.closest('.auto-slide-container');
+        const progressBar = event.target.closest('.progress-bar-container');
 
         if (container) {
             handleHideToolTip(container);
+        }
+
+        if (progressBar) {
+            // handleShowTimeProgressbar(progressBar);
+            // console.log("progress bar çıktı");
+            handleHideCurrentTime(progressBar);
         }
     });
 }
@@ -642,6 +656,32 @@ const handleShowTooltip = (container) => {
 
 const handleHideToolTip = (container) => {
     const description = container.querySelector('.auto-slide-description');
+
+    if (description) {
+        description.classList.remove('visible');
+
+        description.addEventListener('transitionend', () => {
+            description.remove();
+        }, { once: true });
+    }
+}
+
+const handleShowCurrentTime = (progressBarContainer) => {
+    if (progressBarContainer.querySelector('.current-time-description')) return;
+
+    const description = document.createElement('div');
+    description.classList.add('current-time-description');
+    description.textContent = getTimeFromProgressbar(progressBarContainer);
+
+    progressBarContainer.append(description);
+
+    setTimeout(() => {
+        description.classList.add('visible');
+    }, 10);
+}
+
+const handleHideCurrentTime = (progressBarContainer) => {
+    const description = progressBarContainer.querySelector('.current-time-description');
 
     if (description) {
         description.classList.remove('visible');
@@ -924,6 +964,25 @@ const handleProgressbar = (event) => {
 
         progressBar.style.width = `${(seekTime / videoPlayer.duration) * 100}%`;
     }
+}
+
+const getTimeFromProgressbar = (progressBar) => {
+    const progressBarContainer = progressBar.closest('.progress-bar-container');
+    let seekTime;
+
+    if (progressBarContainer) {
+        const videoPlayerContainer = progressBarContainer.closest('.video-player-container');
+        const videoPlayer = videoPlayerContainer.querySelector('.video-player');
+
+        const overX = event.clientX - progressBarContainer.getBoundingClientRect().left;
+        const containerWidth = progressBarContainer.offsetWidth;
+
+        seekTime = (overX / containerWidth) * videoPlayer.duration;
+
+    }
+
+    return Math.floor(seekTime);
+
 }
 
 const renderComments = (videoId, commentsContainer) => {
