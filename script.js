@@ -618,9 +618,15 @@ const addEvents = () => {
         }
 
         if (progressBar) {
-            // handleShowTimeProgressbar(progressBar);
-            // console.log("progress bara girdi");
-            handleShowCurrentTime(progressBar);
+            handleShowCurrentTime(progressBar, event);
+        }
+    });
+
+    document.addEventListener('mousemove', (event) => {
+        const progressBar = event.target.closest('.progress-bar-container');
+
+        if (progressBar) {
+            handleShowCurrentTime(progressBar, event);
         }
     });
 
@@ -633,21 +639,20 @@ const addEvents = () => {
         }
 
         if (progressBar) {
-            // handleShowTimeProgressbar(progressBar);
-            // console.log("progress bar çıktı");
             handleHideCurrentTime(progressBar);
         }
     });
 }
 
 const handleShowTooltip = (container) => {
-    if (container.querySelector('.auto-slide-description')) return;
+    const label = container.querySelector('.auto-play-button');
+    if (!label || label.querySelector('.auto-slide-description')) return;
 
     const description = document.createElement('div');
     description.classList.add('auto-slide-description');
     description.textContent = `Auto slide is ${isAutoSlideChecked ? 'on' : 'off'}`;
 
-    container.append(description);
+    label.appendChild(description);
 
     setTimeout(() => {
         description.classList.add('visible');
@@ -655,7 +660,10 @@ const handleShowTooltip = (container) => {
 }
 
 const handleHideToolTip = (container) => {
-    const description = container.querySelector('.auto-slide-description');
+    const label = container.querySelector('.auto-play-button');
+    if (!label) return;
+
+    const description = label.querySelector('.auto-slide-description');
 
     if (description) {
         description.classList.remove('visible');
@@ -666,14 +674,30 @@ const handleHideToolTip = (container) => {
     }
 }
 
-const handleShowCurrentTime = (progressBarContainer) => {
-    if (progressBarContainer.querySelector('.current-time-description')) return;
+const handleShowCurrentTime = (progressBarContainer, event) => {
+    if (progressBarContainer.querySelector('.current-time-description')) {
+        const description = progressBarContainer.querySelector('.current-time-description');
+        const time = getTimeFromProgressbar(progressBarContainer, event);
+        description.textContent = time;
+
+        const rect = progressBarContainer.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const percentage = (mouseX / rect.width) * 100;
+        description.style.left = `${Math.min(Math.max(percentage, 10), 90)}%`;
+        return;
+    }
 
     const description = document.createElement('div');
     description.classList.add('current-time-description');
-    description.textContent = getTimeFromProgressbar(progressBarContainer);
+    const time = getTimeFromProgressbar(progressBarContainer, event);
+    description.textContent = time;
 
-    progressBarContainer.append(description);
+    progressBarContainer.appendChild(description);
+
+    const rect = progressBarContainer.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const percentage = (mouseX / rect.width) * 100;
+    description.style.left = `${Math.min(Math.max(percentage, 10), 90)}%`;
 
     setTimeout(() => {
         description.classList.add('visible');
@@ -966,23 +990,23 @@ const handleProgressbar = (event) => {
     }
 }
 
-const getTimeFromProgressbar = (progressBar) => {
-    const progressBarContainer = progressBar.closest('.progress-bar-container');
-    let seekTime;
+const getTimeFromProgressbar = (progressBarContainer, event) => {
+    const videoPlayerContainer = progressBarContainer.closest('.video-player-container');
+    const videoPlayer = videoPlayerContainer.querySelector('.video-player');
 
-    if (progressBarContainer) {
-        const videoPlayerContainer = progressBarContainer.closest('.video-player-container');
-        const videoPlayer = videoPlayerContainer.querySelector('.video-player');
+    const rect = progressBarContainer.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const containerWidth = progressBarContainer.offsetWidth;
 
-        const overX = event.clientX - progressBarContainer.getBoundingClientRect().left;
-        const containerWidth = progressBarContainer.offsetWidth;
+    const seekTime = (mouseX / containerWidth) * videoPlayer.duration;
 
-        seekTime = (overX / containerWidth) * videoPlayer.duration;
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
-    }
-
-    return Math.floor(seekTime);
-
+    return formatTime(seekTime);
 }
 
 const renderComments = (videoId, commentsContainer) => {
