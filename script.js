@@ -615,9 +615,7 @@ const addEvents = () => {
 
         if (container) {
             handleShowTooltip(container);
-        }
-
-        if (progressBar) {
+        } else if (progressBar) {
             handleShowCurrentTime(progressBar, event);
         }
     });
@@ -636,9 +634,7 @@ const addEvents = () => {
 
         if (container) {
             handleHideToolTip(container);
-        }
-
-        if (progressBar) {
+        } else if (progressBar) {
             handleHideCurrentTime(progressBar);
         }
     });
@@ -646,7 +642,12 @@ const addEvents = () => {
 
 const handleShowTooltip = (container) => {
     const label = container.querySelector('.auto-play-button');
-    if (!label || label.querySelector('.auto-slide-description')) return;
+    if (!label) return;
+
+    const oldDescription = label.querySelector('.auto-slide-description');
+    if (oldDescription) {
+        oldDescription.remove();
+    }
 
     const description = document.createElement('div');
     description.classList.add('auto-slide-description');
@@ -668,23 +669,18 @@ const handleHideToolTip = (container) => {
     if (description) {
         description.classList.remove('visible');
 
-        description.addEventListener('transitionend', () => {
-            description.remove();
-        }, { once: true });
+        setTimeout(() => {
+            if (description && description.parentNode) {
+                description.remove();
+            }
+        }, 300);
     }
 }
 
 const handleShowCurrentTime = (progressBarContainer, event) => {
-    if (progressBarContainer.querySelector('.current-time-description')) {
-        const description = progressBarContainer.querySelector('.current-time-description');
-        const time = getTimeFromProgressbar(progressBarContainer, event);
-        description.textContent = time;
-
-        const rect = progressBarContainer.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const percentage = (mouseX / rect.width) * 100;
-        description.style.left = `${Math.min(Math.max(percentage, 10), 90)}%`;
-        return;
+    const oldDescription = progressBarContainer.querySelector('.current-time-description');
+    if (oldDescription) {
+        oldDescription.remove();
     }
 
     const description = document.createElement('div');
@@ -710,9 +706,11 @@ const handleHideCurrentTime = (progressBarContainer) => {
     if (description) {
         description.classList.remove('visible');
 
-        description.addEventListener('transitionend', () => {
-            description.remove();
-        }, { once: true });
+        setTimeout(() => {
+            if (description && description.parentNode) {
+                description.remove();
+            }
+        }, 300);
     }
 }
 
