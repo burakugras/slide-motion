@@ -314,13 +314,20 @@ const setupObserver = () => {
 let isMuted = true;
 
 const renderVideos = (videos) => {
-    const likedVideoIDs = JSON.parse(localStorage.getItem('likes')) || [];
 
     videos.forEach(video => {
         const videoCard = document.createElement('div');
         videoCard.classList.add('video-card');
 
         videoCard.dataset.videoId = video.id;
+
+        const statuses = JSON.parse(localStorage.getItem('statuses')) || [];
+        const videoStatus = statuses.find(videoInfo => Number(videoInfo.id) === Number(video.id));
+        console.log(videoStatus);
+        let isLikedInLocale = videoStatus ? videoStatus.isLiked : false;
+        let isSavedInLocale = videoStatus ? videoStatus.isSaved : false;
+        // console.log('liked in local : ', isLikedInLocale);
+        // console.log('saved in local : ', isSavedInLocale);
 
         const videoPlayerContainer = document.createElement('div');
         videoPlayerContainer.classList.add('video-player-container');
@@ -462,17 +469,15 @@ const renderVideos = (videos) => {
         const bottomContainer = document.createElement('div');
         bottomContainer.classList.add('bottom-container');
 
-        let like = video.isLiked || likedVideoIDs.includes(video.id);
-
-        // const localHasId = likedVideoIDs.includes(video.id);
+        let like = video.isLiked || isLikedInLocale || false;
 
         const likeButton = document.createElement('div');
         likeButton.classList.add('btn', 'like-button');
 
         const likeIcon = document.createElement('img');
         likeIcon.classList.add('like-icon');
-        likeIcon.dataset.liked = like;
-        likeIcon.src = (like) ? '/icons/liked-icon.png' : '/icons/like-icon.png';
+        likeIcon.dataset.liked = isLikedInLocale;
+        likeIcon.src = (isLikedInLocale) ? '/icons/liked-icon.png' : '/icons/like-icon.png';
         const likeCount = document.createElement('span');
         likeCount.classList.add('like-count')
         likeCount.textContent = like ? video.likes + 1 : video.likes;
@@ -504,12 +509,10 @@ const renderVideos = (videos) => {
         const saveButton = document.createElement('div');
         saveButton.classList.add('btn', 'save-button');
 
-        let save = video.isSaved;
-
         const saveIcon = document.createElement('img');
-        saveIcon.src = '/icons/save-icon.png';
+        saveIcon.src = isSavedInLocale ? '/icons/saved-icon.png' : '/icons/save-icon.png';
         saveIcon.alt = 'save';
-        saveIcon.dataset.saved = save;
+        saveIcon.dataset.saved = isSavedInLocale;
         saveIcon.classList.add('save-icon');
 
         saveButton.append(saveIcon);
@@ -755,13 +758,31 @@ const handleMuteButton = (event) => {
     }
 }
 
-const saveLikedVideos = (favoriteVideoIDs) => {
-    localStorage.setItem('likes', JSON.stringify(favoriteVideoIDs));
+const localStatusesVideos = (favoriteVideoIDs) => {
+    localStorage.setItem('statuses', JSON.stringify(favoriteVideoIDs));
+}
+
+
+const handleVideoLocals = (videoID, isLike, isSave) => {
+    const statuses = JSON.parse(localStorage.getItem('statuses')) || [];
+
+    const index = statuses.findIndex(videoInfo => videoInfo.id === videoID);
+
+    if (index === -1) {
+        statuses.push({
+            id: videoID,
+            isLiked: isLike,
+            isSaved: isSave
+        })
+    } else {
+        statuses[index].isLiked = isLike;
+        statuses[index].isSaved = isSave;
+    }
+
+    localStorage.setItem('statuses', JSON.stringify(statuses));
 }
 
 const handleLikeButton = (event) => {
-    const likes = JSON.parse(localStorage.getItem('likes')) || [];
-
     const likeButton = event.target.closest('.like-button');
 
     if (likeButton) {
@@ -777,15 +798,12 @@ const handleLikeButton = (event) => {
         isLiked = !isLiked;
         likeIcon.dataset.liked = isLiked;
 
-        if (isLiked) {
-            if (!likes.includes(videoID)) {
-                likes.push(videoID);
-                saveLikedVideos(likes);
-            }
-        } else {
-            const newLikes = likes.filter(id => id !== videoID);
-            saveLikedVideos(newLikes);
-        }
+        const bottomContainer = videoCard.querySelector('.bottom-container');
+        const saveButton = bottomContainer.querySelector('.save-button');
+        const saveIcon = saveButton.querySelector('.save-icon');
+        const isSaved = saveIcon.dataset.saved === 'true';
+
+        handleVideoLocals(videoID, isLiked, isSaved);
 
         likeIcon.classList.toggle('liked-icon', isLiked);
         likeIcon.src = isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png';
@@ -798,11 +816,19 @@ const handleSaveButton = (event) => {
     const saveButton = event.target.closest('.save-button');
 
     if (saveButton) {
+        const videoCard = saveButton.closest('.video-card');
+        const videoID = parseInt(videoCard.dataset.videoId);
+
         const saveIcon = saveButton.querySelector('.save-icon');
         let isSaved = saveIcon.getAttribute("data-saved") === "true";
 
         isSaved = !isSaved;
         saveIcon.dataset.saved = isSaved;
+
+        const likeIcon = videoCard.querySelector('.like-icon');
+        const isLiked = likeIcon.dataset.liked === 'true';
+
+        handleVideoLocals(videoID, isLiked, isSaved);
 
         saveIcon.classList.toggle('saved-icon', isSaved);
         saveIcon.src = isSaved ? 'icons/saved-icon.png' : 'icons/save-icon.png';
