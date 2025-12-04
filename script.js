@@ -1,12 +1,14 @@
 import { url } from "./environment.js";
 
+const isAutoSlideEnabled = getSettings().isAutoSlideEnable;
+
 let page = 1;
 const pageSize = 3;
 let isLoading = false;
 let observer;
 let allVideos = [];
 let currentPlayingVideo = null;
-let isAutoSlideChecked = true;
+let isAutoSlideChecked = isAutoSlideEnabled
 
 let script = document.createElement('script');
 script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
@@ -323,7 +325,7 @@ const renderVideos = (videos) => {
 
         const statuses = JSON.parse(localStorage.getItem('statuses')) || [];
         const videoStatus = statuses.find(videoInfo => Number(videoInfo.id) === Number(video.id));
-        console.log(videoStatus);
+        // console.log(videoStatus);
         let isLikedInLocale = videoStatus ? videoStatus.isLiked : false;
         let isSavedInLocale = videoStatus ? videoStatus.isSaved : false;
         // console.log('liked in local : ', isLikedInLocale);
@@ -723,6 +725,9 @@ const handleAutoSlide = (event) => {
 
         isAutoSlideChecked = !isAutoSlideChecked;
         // console.log('AutoSlide durumu değişti:', isAutoSlideChecked);
+        localStorage.setItem('settings', JSON.stringify(
+            { isAutoSlideEnable: isAutoSlideChecked }
+        ));
 
         const allAutoSlideButtons = document.querySelectorAll('.auto-slide-container input[type="checkbox"]');
         const allVideoPlayers = document.querySelectorAll('.video-player');
@@ -1253,3 +1258,21 @@ const scrollToNextVideo = (currentVideoCard) => {
         });
     }
 };
+
+function getSettings() {
+    const settings = JSON.parse(localStorage.getItem('settings'));
+
+    if (!settings) {
+        createSettings();
+    }
+
+    return settings;
+}
+
+function createSettings() {
+    localStorage.setItem('settings', JSON.stringify(
+        { isAutoSlideEnable: true }
+    ));
+}
+
+console.log(getSettings());
