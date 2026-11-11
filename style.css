@@ -592,8 +592,10 @@ input.input-bottom {
   pointer-events: auto;
 }
 
+/* :focus-visible (not :focus-within) so a mouse click on the button does not
+   keep the slider open after the pointer leaves; keyboard focus still opens it. */
 .volume-control:hover .volume-slider,
-.volume-control:focus-within .volume-slider {
+.volume-control:has(:focus-visible) .volume-slider {
   opacity: 1;
   visibility: visible;
 }
