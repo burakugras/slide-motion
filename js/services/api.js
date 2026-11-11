@@ -1,12 +1,50 @@
-import { url } from '../../environment.js';
 import { state } from '../state.js';
-import { renderVideos } from '../modules/ui.js';
 import { generateMockComments } from '../utils/helpers.js';
+import { getUserComments } from './storage.js';
 
+let apiUrlPromise = null;
 
+// environment.js is git-ignored (it holds the Pixabay API key), so it is loaded
+// lazily: a missing file becomes a readable error instead of a broken module graph.
+const getApiUrl = () => {
+    if (!apiUrlPromise) {
+        apiUrlPromise = import('../../environment.js').then(module => {
+            if (!module.url) throw new Error('environment.js does not export "url".');
+            return module.url;
+        });
+    }
+    return apiUrlPromise;
+};
+
+const pickVideoUrl = (video) => {
+    const sources = video.videos || {};
+    return sources.small?.url || sources.medium?.url || sources.tiny?.url || sources.large?.url || '';
+};
+
+const enhanceVideo = (video) => {
+    const commentList = [
+        ...getUserComments(video.id),
+        ...generateMockComments(video.id, video.comments)
+    ].sort((a, b) => b.timeStamp - a.timeStamp);
+
+    return {
+        ...video,
+        videoUrl: pickVideoUrl(video),
+        commentList
+    };
+};
+
+/**
+ * Fetches one page of videos.
+ * @returns {Promise<{videos: object[], totalHits: number} | null>} null on failure.
+ */
 export const fetchVideos = async (page, pageSize) => {
     try {
-        const response = await fetch(url + `&page=${page}&per_page=${pageSize}`);
+        const requestUrl = new URL(await getApiUrl());
+        requestUrl.searchParams.set('page', page);
+        requestUrl.searchParams.set('per_page', pageSize);
+
+        const response = await fetch(requestUrl);
 
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
@@ -14,30 +52,19 @@ export const fetchVideos = async (page, pageSize) => {
 
         const data = await response.json();
 
-        if (!data || data.totalHits === undefined) {
-            console.error("Data or totalHits property is missing in the response.");
+        if (!data || !Array.isArray(data.hits) || typeof data.totalHits !== 'number') {
+            throw new Error('Unexpected response: "hits" or "totalHits" is missing.');
         }
 
-        const handleVideos = (videos) => {
-            const enhancedVideos = videos.map((video) => ({
-                ...video,
-                isLiked: false,
-                isSaved: false,
-                commentList: generateMockComments(video.id, video.comments)
-            }));
+        const videos = data.hits
+            .map(enhanceVideo)
+            .filter(video => video.videoUrl);
 
-            state.allVideos.push(...enhancedVideos);
+        state.allVideos.push(...videos);
 
-            renderVideos(enhancedVideos);
-        };
-
-        if (data.hits) {
-            handleVideos(data.hits);
-        }
-
-        return data;
+        return { videos, totalHits: data.totalHits };
     } catch (error) {
-        console.log("Fetch error:", error.message);
+        console.error('Fetch error:', error.message);
         return null;
     }
 };

@@ -1,334 +1,305 @@
 import { state } from '../state.js';
-import { scrollToNextVideo } from './observer.js';
+import { getVideoStatuses } from '../services/storage.js';
+import { formatTime } from '../utils/helpers.js';
+import { attachProgressTracking, pauseVideo, playVideo } from './videoPlayer.js';
+import { isCommentSectionOpen } from './comments.js';
 
-export const buildHTML = () => {
-    const sliderHTML = `
-            <div class="slider-container">
-                <div class="container">
-                    <div class="slider-wrapper">
-                        <div class="slider">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+const MAX_CARDS = 20;
+const CARDS_TO_KEEP = 15;
+const MAX_VISIBLE_TAGS = 4;
 
-    document.querySelector('body').insertAdjacentHTML('beforeend', sliderHTML);
+const getSlider = () => document.querySelector('.slider');
+
+const createElement = (tag, className, props = {}) => {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    Object.assign(element, props);
+    return element;
 };
 
-
-export const buildCSS = () => {
-    let css = document.createElement('link');
-    css.rel = "stylesheet";
-    css.href = `./style.css`;
-    document.head.appendChild(css);
+const createIconButton = (className, iconClass, iconSrc, label) => {
+    const button = createElement('button', `btn ${className}`, { type: 'button' });
+    button.setAttribute('aria-label', label);
+    button.append(createElement('img', iconClass, { src: iconSrc, alt: '' }));
+    return button;
 };
 
+export const autoSlideLabel = () => `Auto slide is ${state.isAutoSlideEnabled ? 'on' : 'off'}`;
 
-export const renderVideos = (videos) => {
-    const slider = document.querySelector('.slider');
+export const getLikeIconSrc = (isLiked) => (isLiked ? 'icons/liked-icon.png' : 'icons/like-icon.png');
+export const getSaveIconSrc = (isSaved) => (isSaved ? 'icons/saved-icon.png' : 'icons/save-icon.png');
+export const getSoundIconSrc = (isMuted) => (isMuted ? 'icons/muted-sound-icon.png' : 'icons/sound-icon.png');
 
-    videos.forEach(video => {
-        const videoCard = document.createElement('div');
-        videoCard.classList.add('video-card');
-        videoCard.dataset.videoId = video.id;
+/* ---------- Card parts ---------- */
 
-        const statuses = JSON.parse(localStorage.getItem('statuses')) || [];
-        const videoStatus = statuses.find(videoInfo => Number(videoInfo.id) === Number(video.id));
+const createLoading = () => {
+    const loadingContainer = createElement('div', 'loading-container');
+    loadingContainer.append(createElement('img', 'loading-icon', { src: 'icons/loading-icon.png', alt: 'Loading' }));
+    return loadingContainer;
+};
 
-        let isLikedInLocale = videoStatus ? videoStatus.isLiked : false;
-        let isSavedInLocale = videoStatus ? videoStatus.isSaved : false;
-
-        const videoPlayerContainer = document.createElement('div');
-        videoPlayerContainer.classList.add('video-player-container');
-
-        const loadingContainer = document.createElement('div');
-        loadingContainer.classList.add('loading-container');
-        const loadingIcon = document.createElement('img');
-        loadingIcon.classList.add('loading-icon');
-        loadingIcon.src = '/icons/loading-icon.png';
-        loadingIcon.alt = '..loading';
-        loadingContainer.append(loadingIcon);
-        videoPlayerContainer.append(loadingContainer);
-
-        const videoPlayer = document.createElement('video');
-        videoPlayer.classList.add('video-player');
-        videoPlayer.autoplay = false;
-        videoPlayer.loop = !state.isAutoSlideEnabled;
-        videoPlayer.playsInline = true;
-        videoPlayer.muted = state.isMuted;
-        videoPlayer.preload = "metadata";
-        videoPlayer.src = video.videos.small.url;
-
-        const canPlayHandler = () => {
-            loadingContainer.remove();
-        };
-        videoPlayer._canPlayHandler = canPlayHandler;
-        videoPlayer.addEventListener('canplay', canPlayHandler, { once: true });
-
-        let animationFrameId = 0;
-        let lastTime = 0;
-
-        const updateProgressBar = () => {
-            const progressBar = videoPlayerContainer.querySelector('.progress-bar');
-            const durationDisplay = videoPlayerContainer.querySelector('.time-text');
-
-            if (!progressBar || !videoPlayer.duration) {
-                animationFrameId = requestAnimationFrame(updateProgressBar);
-                return;
-            }
-
-            const currentTime = videoPlayer.currentTime;
-            const duration = videoPlayer.duration;
-            const currentProgress = (currentTime / duration) * 100;
-
-            if (currentTime < lastTime && lastTime > duration * 0.8) {
-                progressBar.style.transition = 'none';
-                progressBar.style.width = `0%`;
-            } else {
-                progressBar.style.transition = 'none';
-                progressBar.style.width = `${Math.min(currentProgress, 100)}%`;
-            }
-
-            if (durationDisplay) {
-                const formatTime = (seconds) => {
-                    const mins = Math.floor(seconds / 60);
-                    const secs = Math.floor(seconds % 60);
-                    return `${mins}:${secs.toString().padStart(2, '0')}`;
-                };
-                durationDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-            }
-
-            lastTime = currentTime;
-
-            if (!videoPlayer.paused) {
-                animationFrameId = requestAnimationFrame(updateProgressBar);
-            }
-        };
-
-        videoPlayer.addEventListener('play', () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            lastTime = videoPlayer.currentTime;
-            animationFrameId = requestAnimationFrame(updateProgressBar);
-        });
-
-        videoPlayer.addEventListener('pause', () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        });
-
-        videoPlayer.addEventListener('loadedmetadata', () => {
-            const progressBar = videoPlayerContainer.querySelector('.progress-bar');
-            if (progressBar) {
-                progressBar.style.transition = 'none';
-                progressBar.style.width = '0%';
-            }
-            lastTime = 0;
-        });
-
-        videoPlayer.addEventListener('ended', () => {
-            if (state.isAutoSlideEnabled) {
-                scrollToNextVideo(videoCard);
-            }
-        });
-
-        if (state.observer) {
-            state.observer.observe(videoPlayer);
-        }
-
-        const autoSlideContainer = document.createElement('div');
-        autoSlideContainer.classList.add('auto-slide-container');
-        const inputBox = document.createElement('input');
-        inputBox.type = 'checkbox';
-        inputBox.id = `check-auto-${video.id}`;
-        inputBox.checked = state.isAutoSlideEnabled;
-        const autoSlideInput = document.createElement('label');
-        autoSlideInput.htmlFor = inputBox.id;
-        autoSlideInput.classList.add('auto-play-button');
-        autoSlideContainer.append(inputBox, autoSlideInput);
-
-        const buttonContainer = document.createElement('div');
-        buttonContainer.classList.add('button-container');
-
-        const topContainer = document.createElement('div');
-        topContainer.classList.add('top-container');
-
-        const muteButton = document.createElement('div');
-        muteButton.classList.add('btn', 'mute-button');
-        const soundIcon = document.createElement('img');
-        soundIcon.classList = state.isMuted ? [`sound-icon muted-sound-icon`] : ['sound-icon'];
-        soundIcon.src = state.isMuted ? '/icons/muted-sound-icon.png' : '/icons/sound-icon.png';
-        soundIcon.alt = 'mute';
-        muteButton.appendChild(soundIcon);
-        topContainer.append(muteButton);
-
-        const bottomContainer = document.createElement('div');
-        bottomContainer.classList.add('bottom-container');
-
-        let like = video.isLiked || isLikedInLocale || false;
-        const likeButton = document.createElement('div');
-        likeButton.classList.add('btn', 'like-button');
-        const likeIcon = document.createElement('img');
-        likeIcon.classList.add('like-icon');
-        likeIcon.dataset.liked = isLikedInLocale;
-        likeIcon.src = (isLikedInLocale) ? '/icons/liked-icon.png' : '/icons/like-icon.png';
-        const likeCount = document.createElement('span');
-        likeCount.classList.add('like-count');
-        likeCount.textContent = like ? video.likes + 1 : video.likes;
-        likeIcon.classList.toggle('liked-icon', isLikedInLocale);
-        likeButton.append(likeIcon, likeCount);
-
-        const commentButton = document.createElement('div');
-        commentButton.classList.add('btn', 'comment-button');
-        const commentIcon = document.createElement('img');
-        commentIcon.classList.add('comment-icon');
-        commentIcon.src = '/icons/comment-icon.png';
-        commentIcon.alt = 'comment';
-        const commentCount = document.createElement('span');
-        commentCount.classList.add('comment-count');
-        commentCount.textContent = video.comments;
-        commentButton.append(commentIcon, commentCount);
-
-        const shareButton = document.createElement('div');
-        shareButton.classList.add('btn', 'share-button');
-        const shareIcon = document.createElement('img');
-        shareIcon.src = '/icons/share-icon.png';
-        shareIcon.alt = 'share';
-        shareIcon.classList.add('share-icon');
-        shareButton.append(shareIcon);
-
-        const saveButton = document.createElement('div');
-        saveButton.classList.add('btn', 'save-button');
-        const saveIcon = document.createElement('img');
-        saveIcon.src = isSavedInLocale ? '/icons/saved-icon.png' : '/icons/save-icon.png';
-        saveIcon.alt = 'save';
-        saveIcon.dataset.saved = isSavedInLocale;
-        saveIcon.classList.add('save-icon');
-        saveIcon.classList.toggle('saved-icon', isSavedInLocale);
-        saveButton.append(saveIcon);
-
-        bottomContainer.append(likeButton, commentButton, shareButton, saveButton);
-        buttonContainer.append(topContainer, bottomContainer);
-
-        const infoContainer = document.createElement('div');
-        infoContainer.classList.add('info-container');
-
-        const userContainer = document.createElement('div');
-        userContainer.classList.add('info', 'user-container');
-        const userIcon = document.createElement('img');
-        userIcon.classList.add('user-icon');
-        userIcon.src = video.userImageURL || '/icons/user-icon.png';
-        userIcon.alt = 'user';
-        const userName = document.createElement('span');
-        userName.setAttribute('id', 'user-name');
-        userName.textContent = video.user;
-        userContainer.append(userIcon, userName);
-
-        const tagContainer = document.createElement('div');
-        tagContainer.classList.add('info', 'tag-container');
-
-        const allTags = video.tags.split(',');
-        if (allTags.length > 4) {
-            let shortText = '';
-            let longText = '';
-            allTags.slice(0, 8).forEach(tag => { shortText += `#${tag.trim()} `; });
-            allTags.forEach(tag => { longText += `#${tag.trim()} `; });
-
-            tagContainer.textContent = shortText + '...';
-
-            tagContainer.addEventListener('click', () => {
-                const isExpanded = tagContainer.classList.toggle('expanded');
-                tagContainer.textContent = isExpanded ? longText : shortText + '...';
-            });
-        } else {
-            allTags.forEach((tag) => {
-                tagContainer.textContent += `#${tag.trim()} `;
-            });
-            tagContainer.style.cursor = 'default';
-        }
-        infoContainer.append(userContainer, tagContainer);
-
-        const timeContainer = document.createElement('div');
-        timeContainer.classList.add('time-container');
-        const timeText = document.createElement('span');
-        timeText.classList.add('time-text');
-        timeText.textContent = `0:00 / ${video.duration}`;
-        timeContainer.append(timeText);
-
-        const progressBarContainer = document.createElement('div');
-        progressBarContainer.classList.add('progress-bar-container');
-        const progressBar = document.createElement('div');
-        progressBar.classList.add('progress-bar');
-        progressBarContainer.append(progressBar);
-
-        videoPlayerContainer.append(videoPlayer, autoSlideContainer, buttonContainer, infoContainer, timeContainer, progressBarContainer);
-        videoCard.append(videoPlayerContainer);
-        slider.append(videoCard);
+const createVideoPlayer = (video, videoCard, loadingContainer) => {
+    const videoPlayer = createElement('video', 'video-player', {
+        autoplay: false,
+        loop: !state.isAutoSlideEnabled,
+        playsInline: true,
+        muted: state.isMuted,
+        preload: 'metadata',
+        src: video.videoUrl
     });
 
-    state.isLoading = false;
+    const hideLoading = () => loadingContainer.remove();
+    videoPlayer.addEventListener('canplay', hideLoading, { once: true });
+    videoPlayer.addEventListener('playing', hideLoading, { once: true });
+
+    videoPlayer.addEventListener('ended', () => {
+        if (!state.isAutoSlideEnabled) return;
+
+        // Don't slide away while the user is reading/writing comments: replay instead.
+        if (isCommentSectionOpen(videoCard)) {
+            videoPlayer.currentTime = 0;
+            playVideo(videoPlayer);
+            return;
+        }
+
+        scrollToNextVideo(videoCard);
+    });
+
+    return videoPlayer;
+};
+
+const createAutoSlideToggle = (video) => {
+    const container = createElement('div', 'auto-slide-container');
+
+    const input = createElement('input', 'auto-slide-input', {
+        type: 'checkbox',
+        id: `check-auto-${video.id}`,
+        checked: state.isAutoSlideEnabled
+    });
+    input.setAttribute('aria-label', 'Auto slide');
+
+    const label = createElement('label', 'auto-play-button', { htmlFor: input.id });
+    const description = createElement('div', 'auto-slide-description', { textContent: autoSlideLabel() });
+
+    container.append(input, label, description);
+    return container;
+};
+
+const createButtons = (video, status) => {
+    const buttonContainer = createElement('div', 'button-container');
+
+    const topContainer = createElement('div', 'top-container');
+    const muteButton = createIconButton('mute-button', 'sound-icon', getSoundIconSrc(state.isMuted), 'Toggle sound');
+    muteButton.setAttribute('aria-pressed', String(state.isMuted));
+    muteButton.querySelector('.sound-icon').classList.toggle('muted-sound-icon', state.isMuted);
+    topContainer.append(muteButton);
+
+    const bottomContainer = createElement('div', 'bottom-container');
+
+    const likeButton = createIconButton('like-button', 'like-icon', getLikeIconSrc(status.isLiked), 'Like');
+    likeButton.setAttribute('aria-pressed', String(status.isLiked));
+    likeButton.querySelector('.like-icon').classList.toggle('liked-icon', status.isLiked);
+    const likeCount = createElement('span', 'like-count', {
+        textContent: video.likes + (status.isLiked ? 1 : 0)
+    });
+    // The API count does not include the local user's like, so keep the base value.
+    likeCount.dataset.baseCount = video.likes;
+    likeButton.append(likeCount);
+
+    const commentButton = createIconButton('comment-button', 'comment-icon', 'icons/comment-icon.png', 'Comments');
+    commentButton.append(createElement('span', 'comment-count', { textContent: video.commentList.length }));
+
+    const shareButton = createIconButton('share-button', 'share-icon', 'icons/share-icon.png', 'Share');
+
+    const saveButton = createIconButton('save-button', 'save-icon', getSaveIconSrc(status.isSaved), 'Save');
+    saveButton.setAttribute('aria-pressed', String(status.isSaved));
+    saveButton.querySelector('.save-icon').classList.toggle('saved-icon', status.isSaved);
+
+    bottomContainer.append(likeButton, commentButton, shareButton, saveButton);
+    buttonContainer.append(topContainer, bottomContainer);
+    return buttonContainer;
+};
+
+const createTags = (tagsText = '') => {
+    const tagContainer = createElement('div', 'info tag-container');
+    const tags = tagsText.split(',').map(tag => tag.trim()).filter(Boolean);
+    const toText = (list) => list.map(tag => `#${tag}`).join(' ');
+
+    if (tags.length <= MAX_VISIBLE_TAGS) {
+        tagContainer.textContent = toText(tags);
+        tagContainer.classList.add('not-expandable');
+        return tagContainer;
+    }
+
+    const shortText = `${toText(tags.slice(0, MAX_VISIBLE_TAGS))} ...`;
+    const longText = toText(tags);
+
+    tagContainer.textContent = shortText;
+    tagContainer.tabIndex = 0;
+    tagContainer.setAttribute('role', 'button');
+    tagContainer.setAttribute('aria-expanded', 'false');
+
+    const toggle = () => {
+        const isExpanded = tagContainer.classList.toggle('expanded');
+        tagContainer.textContent = isExpanded ? longText : shortText;
+        tagContainer.setAttribute('aria-expanded', String(isExpanded));
+    };
+
+    tagContainer.addEventListener('click', toggle);
+    tagContainer.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggle();
+        }
+    });
+
+    return tagContainer;
+};
+
+const createInfo = (video) => {
+    const infoContainer = createElement('div', 'info-container');
+
+    const userContainer = createElement('div', 'info user-container');
+    userContainer.append(
+        createElement('img', 'user-icon', { src: video.userImageURL || 'icons/user-icon.png', alt: '' }),
+        createElement('span', 'user-name', { textContent: video.user })
+    );
+
+    infoContainer.append(userContainer, createTags(video.tags));
+    return infoContainer;
+};
+
+const createProgress = (video) => {
+    const timeContainer = createElement('div', 'time-container');
+    timeContainer.append(createElement('span', 'time-text', {
+        textContent: `0:00 / ${formatTime(video.duration)}`
+    }));
+
+    const progressBarContainer = createElement('div', 'progress-bar-container');
+    progressBarContainer.append(
+        createElement('div', 'progress-bar'),
+        createElement('div', 'current-time-description', { textContent: '0:00' })
+    );
+
+    return [timeContainer, progressBarContainer];
+};
+
+const createVideoCard = (video, status) => {
+    const videoCard = createElement('div', 'video-card');
+    videoCard.dataset.videoId = video.id;
+
+    const videoPlayerContainer = createElement('div', 'video-player-container');
+    const loadingContainer = createLoading();
+    const videoPlayer = createVideoPlayer(video, videoCard, loadingContainer);
+
+    videoPlayerContainer.append(
+        loadingContainer,
+        videoPlayer,
+        createAutoSlideToggle(video),
+        createButtons(video, status),
+        createInfo(video),
+        ...createProgress(video)
+    );
+
+    attachProgressTracking(videoPlayer, videoPlayerContainer);
+    videoCard.append(videoPlayerContainer);
+
+    return { videoCard, videoPlayer };
+};
+
+/* ---------- Public API ---------- */
+
+export const renderVideos = (videos) => {
+    const slider = getSlider();
+    const statuses = getVideoStatuses();
+    const fragment = document.createDocumentFragment();
+    const players = [];
+
+    videos.forEach(video => {
+        const stored = statuses.get(Number(video.id));
+        const status = { isLiked: Boolean(stored?.isLiked), isSaved: Boolean(stored?.isSaved) };
+        const { videoCard, videoPlayer } = createVideoCard(video, status);
+
+        fragment.append(videoCard);
+        players.push(videoPlayer);
+    });
+
+    slider.querySelector('.feed-message')?.remove();
+    slider.append(fragment);
+    players.forEach(player => state.observer?.observe(player));
+
     optimizePage();
 };
 
+export const scrollToNextVideo = (currentVideoCard) => {
+    const nextVideoCard = currentVideoCard.nextElementSibling;
 
-export const optimizePage = () => {
-    const slider = document.querySelector('.slider');
-    const cards = Array.from(slider.children);
-
-    if (cards.length > 20) {
-        const cardsToRemove = cards.slice(0, cards.length - 15);
-        const scrollTop = slider.scrollTop;
-        const removedHeight = cardsToRemove.reduce((sum, card) => sum + card.offsetHeight, 0);
-
-        cardsToRemove.forEach((card) => {
-            const video = card.querySelector('video');
-
-            if (video) {
-                if (state.observer) state.observer.unobserve(video);
-                cleanupVideo(video);
-
-                if (video._canPlayHandler) {
-                    video.removeEventListener('canplay', video._canPlayHandler);
-                    delete video._canPlayHandler;
-                }
-
-                video.src = '';
-                video.srcObject = null;
-            }
-
-            const cardElements = card.querySelectorAll('*');
-            cardElements.forEach(element => {
-                if (element.dataset) {
-                    Object.keys(element.dataset).forEach(key => delete element.dataset[key]);
-                }
-                if (element.tagName === 'IMG') {
-                    element.src = '';
-                }
-            });
-
-            card.remove();
-        });
-
-        slider.scrollTop = scrollTop - removedHeight;
-
-        if (typeof window !== 'undefined' && typeof window.gc === 'function') {
-            window.gc();
-        }
+    if (nextVideoCard?.classList.contains('video-card')) {
+        nextVideoCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 };
 
+export const showFeedMessage = (text) => {
+    const slider = getSlider();
+    if (!slider) return;
 
-const cleanupVideo = (videoElement) => {
-    videoElement.pause();
-    videoElement.removeAttribute('src');
-    videoElement.srcObject = null;
-    videoElement.load();
+    let message = slider.querySelector('.feed-message');
+    if (!message) {
+        message = createElement('div', 'feed-message');
+        slider.append(message);
+    }
+    message.textContent = text;
+};
 
-    videoElement.isLiked = null;
-    videoElement.isSaved = null;
+let toastTimer = null;
+
+export const showToast = (text) => {
+    let toast = document.querySelector('.toast');
+
+    if (!toast) {
+        toast = createElement('div', 'toast');
+        toast.setAttribute('role', 'status');
+        document.body.append(toast);
+    }
+
+    toast.textContent = text;
+    toast.classList.add('visible');
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('visible'), 2000);
+};
+
+const releaseVideo = (video) => {
+    state.observer?.unobserve(video);
+    pauseVideo(video);
+    // Dropping the source and calling load() frees the media buffer.
+    video.removeAttribute('src');
+    video.load();
+};
+
+/** Keeps the DOM small by removing old cards from the top of the feed. */
+export const optimizePage = () => {
+    const slider = getSlider();
+    const cards = Array.from(slider.querySelectorAll('.video-card'));
+
+    if (cards.length <= MAX_CARDS) return;
+
+    const cardsToRemove = cards.slice(0, cards.length - CARDS_TO_KEEP);
+    const scrollTop = slider.scrollTop;
+    const removedHeight = cardsToRemove.reduce((sum, card) => sum + card.offsetHeight, 0);
+    const removedIds = new Set(cardsToRemove.map(card => Number(card.dataset.videoId)));
+
+    cardsToRemove.forEach(card => {
+        const video = card.querySelector('video');
+        if (video) releaseVideo(video);
+        card.remove();
+    });
+
+    // Also drop their data so state.allVideos does not grow forever.
+    state.allVideos = state.allVideos.filter(video => !removedIds.has(Number(video.id)));
+
+    // Jump instantly (CSS uses smooth scrolling) so the user does not see a scroll animation.
+    slider.style.scrollBehavior = 'auto';
+    slider.scrollTop = scrollTop - removedHeight;
+    slider.style.scrollBehavior = '';
 };

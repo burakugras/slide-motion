@@ -1,26 +1,20 @@
 import { getSettings } from './services/storage.js';
 import { state } from './state.js';
-import { buildHTML, buildCSS } from './modules/ui.js';
 import { setupObserver } from './modules/observer.js';
-import { fetchVideos } from './services/api.js';
+import { loadNextPage } from './modules/feed.js';
 import { addEvents } from './handlers.js';
 
-
 const init = () => {
-    console.log("App initializing...");
+    state.isAutoSlideEnabled = getSettings().isAutoSlideEnabled;
 
-    const settings = getSettings();
-    state.isAutoSlideEnabled = settings.isAutoSlideEnable;
-
-    buildHTML();
-    buildCSS();
     setupObserver();
-
     addEvents();
-
-    fetchVideos(state.page, state.pageSize);
+    loadNextPage();
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+// Module scripts are deferred, but guard anyway in case the script tag moves.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
     init();
-});
+}

@@ -1,10 +1,12 @@
 export const state = {
-    page: 1,
+    // Last page successfully loaded from the API (0 = nothing loaded yet).
+    page: 0,
     pageSize: 3,
     isLoading: false,
+    hasMore: true,
     allVideos: [],
     currentPlayingVideo: null,
     isMuted: true,
-    isAutoSlideEnabled: false,
+    isAutoSlideEnabled: true,
     observer: null
 };

@@ -1,91 +1,40 @@
 import { state } from '../state.js';
-import { fetchVideos } from '../services/api.js';
-import { playVideo, pauseVideo } from './videoPlayer.js';
+import { loadNextPage } from './feed.js';
+import { playVideo, pauseVideo, hidePlayIcon } from './videoPlayer.js';
+import { closeAllCommentSections } from './comments.js';
 
-const loadMore = async () => {
-    if (state.isLoading) return;
+const PRELOAD_DISTANCE = 2; // start loading when one of the last N videos is visible
 
-    state.isLoading = true;
-    state.page++;
+const maybeLoadMore = (video) => {
+    const videos = Array.from(document.querySelectorAll('.video-player'));
+    const index = videos.indexOf(video);
 
-    const moreData = await fetchVideos(state.page, state.pageSize);
-
-    if (!moreData || !moreData.totalHits) {
-        console.log('No more data available.');
-        state.isLoading = false;
-        return;
+    if (index !== -1 && index >= videos.length - PRELOAD_DISTANCE) {
+        loadNextPage();
     }
+};
 
-    const totalPages = Math.ceil(moreData.totalHits / state.pageSize);
+const activateVideo = (video) => {
+    maybeLoadMore(video);
+    closeAllCommentSections({ immediate: true });
+    hidePlayIcon(video.closest('.video-player-container'));
 
-    if (state.page >= totalPages) {
-        console.log("You have reached the last video.");
-        if (state.observer) {
-            state.observer.disconnect();
-        }
-    }
+    video.currentTime = 0;
+    // play() waits for data by itself; if the video leaves the screen first,
+    // pauseVideo() aborts the pending play, so no off-screen video can start.
+    playVideo(video);
 };
 
 export const setupObserver = () => {
+    // The observer is never disconnected: it also drives play/pause,
+    // not only infinite loading (which is stopped via state.hasMore).
     state.observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            const video = entry.target;
-
             if (entry.isIntersecting) {
-                const videos = document.querySelectorAll('.video-player');
-                const lastVideo = videos[videos.length - 1];
-                const secondLastVideo = videos[videos.length - 2];
-
-                if ((video === lastVideo || video === secondLastVideo) && !state.isLoading) {
-                    loadMore();
-                }
-
-                const container = video.closest('.video-player-container');
-                const playIcon = container?.querySelector('.play-icon');
-                const loadingContainer = container?.querySelector('.loading-container');
-
-                if (playIcon) {
-                    playIcon.remove();
-                }
-
-                document.querySelectorAll('.comment-container').forEach(commentContainer => {
-                    commentContainer.remove();
-                });
-
-                if (video.readyState >= 2) {
-                    video.currentTime = 0;
-                    if (loadingContainer) {
-                        loadingContainer.remove();
-                    }
-                    playVideo(video);
-                } else {
-                    const canPlayHandler = () => {
-                        video.currentTime = 0;
-                        if (loadingContainer) {
-                            loadingContainer.remove();
-                        }
-                        playVideo(video);
-                    };
-                    video.addEventListener("canplay", canPlayHandler, { once: true });
-                }
+                activateVideo(entry.target);
             } else {
-                pauseVideo(video);
+                pauseVideo(entry.target);
             }
         });
     }, { threshold: 0.6 });
-};
-
-export const scrollToNextVideo = (currentVideoCard) => {
-    const slider = document.querySelector('.slider');
-    const allVideoCards = Array.from(slider.querySelectorAll('.video-card'));
-    const currentIndex = allVideoCards.indexOf(currentVideoCard);
-
-    if (currentIndex !== -1 && currentIndex < allVideoCards.length - 1) {
-        const nextVideoCard = allVideoCards[currentIndex + 1];
-
-        nextVideoCard.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
-    }
 };
