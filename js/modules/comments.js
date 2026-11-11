@@ -1,269 +1,388 @@
 import { state } from '../state.js';
-import { timeAgo } from '../utils/helpers.js';
+import { clamp, timeAgo } from '../utils/helpers.js';
+import {
+    getCommentReactions,
+    saveCommentReaction,
+    removeCommentReaction,
+    getUserComments,
+    saveUserComments
+} from '../services/storage.js';
 
-export const openCommentSection = (videoId, videoPlayerContainer) => {
-    const existingContainers = document.querySelectorAll('.comment-container');
-    existingContainers.forEach(container => container.remove());
+const READ_MORE_LIMIT = 150;
+const MAX_COMMENT_LENGTH = 500;
+const MIN_PANEL_HEIGHT = 150;
+const CLOSE_FALLBACK_MS = 600;
 
+// Set when a drag of the panel ends, so the click that follows the mouseup
+// (which may land outside the panel) does not close it.
+let lastDragEndedAt = 0;
+
+const findVideo = (videoId) => state.allVideos.find(video => Number(video.id) === Number(videoId));
+
+const updateSliderScroll = () => {
     const slider = document.querySelector('.slider');
-    if (slider) slider.style.overflowY = 'hidden';
-
-    const commentContainer = document.createElement('div');
-    commentContainer.classList.add('comment-container');
-
-    const commentsInsideContainer = document.createElement('div');
-    commentsInsideContainer.classList.add('comments-inside-container');
-
-    const dragHandle = document.createElement('div');
-    dragHandle.classList.add('drag-handle');
-    const dragIcon = document.createElement('div');
-    dragIcon.classList.add('drag-icon');
-    dragHandle.appendChild(dragIcon);
-
-    const headerCommentContainer = document.createElement('div');
-    headerCommentContainer.classList.add('header-comment-container');
-
-    const header = document.createElement('h2');
-    header.classList.add('comments-header');
-    header.textContent = "Comments";
-
-    const closeCommentButton = document.createElement('img');
-    closeCommentButton.className = 'close-comment-button';
-    closeCommentButton.src = 'icons/close-icon.png';
-    closeCommentButton.addEventListener('click', () => {
-        closeCommentSection(commentContainer);
-    });
-
-    const horizontalLine = document.createElement('hr');
-    horizontalLine.classList.add('separator-line');
-    const bottomHorizontalLine = document.createElement('hr');
-    bottomHorizontalLine.classList.add('separator-line');
-
-    const commentsListDiv = document.createElement('div');
-    commentsListDiv.classList.add('comments');
-
-    const addCommentContainer = document.createElement('div');
-    addCommentContainer.classList.add('add-comment-container');
-
-    const inputBottom = document.createElement('input');
-    inputBottom.classList.add('input-bottom');
-    inputBottom.name = 'comment-input';
-    inputBottom.placeholder = 'please input your comment...';
-
-    const enterButton = document.createElement('img');
-    enterButton.classList.add('enter-icon');
-    enterButton.src = '/icons/enter-icon.png';
-    enterButton.alt = 'enter';
-
-    addCommentContainer.append(inputBottom, enterButton);
-
-    headerCommentContainer.append(header, closeCommentButton);
-    commentsInsideContainer.append(
-        dragHandle,
-        headerCommentContainer,
-        horizontalLine,
-        commentsListDiv,
-        bottomHorizontalLine,
-        addCommentContainer
-    );
-
-    commentContainer.append(commentsInsideContainer);
-    videoPlayerContainer.append(commentContainer);
-
-    requestAnimationFrame(() => {
-        commentContainer.classList.add('active');
-    });
-    setupDragHandle(commentContainer, dragHandle);
-    renderComments(videoId, commentsListDiv);
+    if (!slider) return;
+    slider.style.overflowY = document.querySelector('.comment-container.active') ? 'hidden' : '';
 };
 
-export const renderComments = (videoId, commentsContainer) => {
-    const video = state.allVideos.find(v => Number(v.id) === Number(videoId));
+const updateCommentCounts = (video, commentContainer) => {
+    const count = video.commentList.length;
+    const card = document.querySelector(`.video-card[data-video-id="${video.id}"]`);
+    const cardCount = card?.querySelector('.comment-count');
+    const headerCount = commentContainer?.querySelector('.comments-header-count');
 
-    if (!video || !video.commentList || video.commentList.length === 0) {
+    if (cardCount) cardCount.textContent = count;
+    if (headerCount) headerCount.textContent = `(${count})`;
+};
+
+const persistOwnComments = (video) => {
+    saveUserComments(video.id, video.commentList.filter(comment => comment.isOwn));
+};
+
+/* ---------- Opening / closing ---------- */
+
+export const isCommentSectionOpen = (scope = document) => Boolean(scope.querySelector('.comment-container.active'));
+
+export const closeCommentSection = (commentContainer, { immediate = false } = {}) => {
+    if (!commentContainer || commentContainer.dataset.closing === 'true') return;
+
+    commentContainer.dataset.closing = 'true';
+    commentContainer.classList.remove('active');
+    updateSliderScroll();
+
+    if (immediate) {
+        commentContainer.remove();
         return;
     }
 
-    video.commentList.forEach(comment => {
-        const commentDiv = document.createElement('div');
-        commentDiv.classList.add('comment');
+    let finished = false;
+    const finish = () => {
+        if (finished) return;
+        finished = true;
+        commentContainer.remove();
+    };
 
-        const commentLeftDiv = document.createElement('div');
-        commentLeftDiv.classList.add('comment-left-div');
+    commentContainer.addEventListener('transitionend', (event) => {
+        // transitionend bubbles from children too (e.g. hover colors), ignore those.
+        if (event.target === commentContainer) finish();
+    });
+    // Fallback in case the transition never runs (e.g. the panel was not visible yet).
+    setTimeout(finish, CLOSE_FALLBACK_MS);
+};
 
-        const commentMidDiv = document.createElement('div');
-        commentMidDiv.classList.add('comment-mid-div');
+export const closeAllCommentSections = (options) => {
+    document.querySelectorAll('.comment-container').forEach(container => closeCommentSection(container, options));
+    updateSliderScroll();
+};
 
-        const commentRightDiv = document.createElement('div');
-        commentRightDiv.classList.add('comment-right-div');
+export const handleOutsideClick = (event) => {
+    if (!document.querySelector('.comment-container')) return;
+    if (Date.now() - lastDragEndedAt < 100) return;
+    // composedPath() is captured at dispatch time, so it still works when the clicked
+    // element was re-rendered (detached) by a handler that ran earlier.
+    const isInside = event.composedPath().some(element =>
+        element.classList?.contains('comment-container') || element.classList?.contains('comment-button')
+    );
+    if (isInside) return;
 
-        const avatar = document.createElement('img');
-        avatar.classList.add('avatar');
-        avatar.src = comment.avatar || '/icons/user-icon-black.png';
-        avatar.alt = 'user avatar';
+    closeAllCommentSections();
+};
 
-        const commentMidHeaderContainer = document.createElement('div');
-        commentMidHeaderContainer.classList.add('mid-header');
+export const toggleCommentSection = (videoId, videoPlayerContainer) => {
+    const openContainer = videoPlayerContainer.querySelector('.comment-container.active');
 
-        const commentMidBottomContainer = document.createElement('div');
-        commentMidBottomContainer.classList.add('mid-bottom-container');
+    if (openContainer) {
+        closeCommentSection(openContainer);
+    } else {
+        openCommentSection(videoId, videoPlayerContainer);
+    }
+};
 
-        const commentLikeIcon = document.createElement('img');
-        commentLikeIcon.classList.add('comment-like-icon');
-        commentLikeIcon.src = '/icons/comment-like-icon.png';
-        commentLikeIcon.alt = 'like';
+export const openCommentSection = (videoId, videoPlayerContainer) => {
+    closeAllCommentSections({ immediate: true });
 
-        const commentLikeCount = document.createElement('span');
-        commentLikeCount.classList.add('comment-like-count');
-        const randomLike = Math.floor(Math.random() * 100);
-        commentLikeCount.textContent = `${randomLike}`;
+    const video = findVideo(videoId);
+    if (!video) return;
 
-        const commentDislikeIcon = document.createElement('img');
-        commentDislikeIcon.classList.add('comment-dislike-icon');
-        commentDislikeIcon.src = '/icons/comment-dislike-icon.png';
-        commentDislikeIcon.alt = 'dislike';
+    const commentContainer = document.createElement('div');
+    commentContainer.classList.add('comment-container');
+    commentContainer.setAttribute('role', 'dialog');
+    commentContainer.setAttribute('aria-label', 'Comments');
 
-        const commentDislikeCount = document.createElement('span');
-        commentDislikeCount.classList.add('comment-dislike-count');
-        const randomDislike = Math.floor(Math.random() * 10);
-        commentDislikeCount.textContent = `${randomDislike}`;
+    commentContainer.innerHTML = `
+        <div class="comments-inside-container">
+            <div class="drag-handle" aria-hidden="true"><div class="drag-icon"></div></div>
+            <div class="header-comment-container">
+                <h2 class="comments-header">Comments <span class="comments-header-count"></span></h2>
+                <button type="button" class="close-comment-button" aria-label="Close comments">
+                    <img src="icons/close-icon.png" alt="">
+                </button>
+            </div>
+            <hr class="separator-line">
+            <div class="comments"></div>
+            <hr class="separator-line">
+            <form class="add-comment-container">
+                <input class="input-bottom" name="comment-input" placeholder="Add a comment..."
+                    maxlength="${MAX_COMMENT_LENGTH}" autocomplete="off" aria-label="Add a comment">
+                <button type="submit" class="enter-button" aria-label="Send comment">
+                    <img class="enter-icon" src="icons/enter-icon.png" alt="">
+                </button>
+            </form>
+        </div>
+    `;
 
-        commentMidBottomContainer.append(commentLikeIcon, commentLikeCount, commentDislikeIcon, commentDislikeCount);
+    const commentsList = commentContainer.querySelector('.comments');
+    const form = commentContainer.querySelector('.add-comment-container');
+    const input = commentContainer.querySelector('.input-bottom');
 
-        const userName = document.createElement('span');
-        userName.classList.add('comment-user-name');
-        userName.textContent = comment.userName;
+    commentContainer.querySelector('.close-comment-button').addEventListener('click', () => {
+        closeCommentSection(commentContainer);
+    });
 
-        const commentContent = document.createElement('span');
-        commentContent.classList.add('comment-content');
-        commentContent.textContent = comment.text;
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (addComment(video, input.value)) {
+            input.value = '';
+            renderComments(video, commentsList);
+            updateCommentCounts(video, commentContainer);
+            commentsList.scrollTop = 0;
+        }
+    });
 
-        if (comment.text.length > 150) {
-            const shortText = comment.text.substring(0, 150) + '...';
-            const fullText = comment.text;
+    commentsList.addEventListener('click', (event) => {
+        const commentElement = event.target.closest('.comment');
+        if (!commentElement) return;
 
-            const readMore = document.createElement('span');
-            readMore.textContent = ' read more';
-            readMore.classList.add('read-more');
+        const comment = video.commentList.find(item => item.id === commentElement.dataset.commentId);
+        if (!comment) return;
 
-            commentContent.textContent = shortText;
-            commentContent.appendChild(readMore);
-
-            readMore.addEventListener('click', () => {
-                const isExpanded = commentContent.classList.toggle('expanded');
-
-                commentContent.childNodes[0].textContent = isExpanded ? fullText : shortText;
-                readMore.textContent = isExpanded ? ' show less' : ' read more';
-            });
+        const reactionButton = event.target.closest('.comment-reaction');
+        if (reactionButton) {
+            toggleReaction(comment, reactionButton.dataset.reaction);
+            commentElement.replaceWith(createCommentElement(comment));
+            return;
         }
 
-        const createdDate = document.createElement('span');
-        createdDate.classList.add('created-date');
-        createdDate.textContent = timeAgo(comment.timeStamp);
+        if (event.target.closest('.delete-comment-button')) {
+            deleteComment(video, comment);
+            renderComments(video, commentsList);
+            updateCommentCounts(video, commentContainer);
+        }
+    });
 
-        commentMidHeaderContainer.append(userName, createdDate);
+    videoPlayerContainer.append(commentContainer);
+    setupDragHandle(commentContainer, commentContainer.querySelector('.drag-handle'));
+    renderComments(video, commentsList);
+    updateCommentCounts(video, commentContainer);
 
-        commentLeftDiv.append(avatar);
-        commentMidDiv.append(commentMidHeaderContainer, commentContent, commentMidBottomContainer);
-        commentDiv.append(commentLeftDiv, commentMidDiv, commentRightDiv);
-
-        commentsContainer.append(commentDiv);
+    requestAnimationFrame(() => {
+        commentContainer.classList.add('active');
+        updateSliderScroll();
     });
 };
 
-export const setupDragHandle = (commentContainer, dragHandle) => {
-    let isDragging = false;
+/* ---------- Comment data ---------- */
+
+const addComment = (video, rawText) => {
+    const text = rawText.trim().slice(0, MAX_COMMENT_LENGTH);
+    if (!text) return false;
+
+    video.commentList.unshift({
+        id: `${video.id}_user_${Date.now()}`,
+        userName: 'You',
+        text,
+        avatar: 'icons/user-icon-black.png',
+        timeStamp: Date.now(),
+        likes: 0,
+        dislikes: 0,
+        isOwn: true
+    });
+
+    persistOwnComments(video);
+    return true;
+};
+
+const deleteComment = (video, comment) => {
+    if (!comment.isOwn) return;
+
+    video.commentList = video.commentList.filter(item => item.id !== comment.id);
+    removeCommentReaction(comment.id);
+    persistOwnComments(video);
+};
+
+const toggleReaction = (comment, reaction) => {
+    const current = getCommentReactions()[comment.id] || null;
+    saveCommentReaction(comment.id, current === reaction ? null : reaction);
+};
+
+/* ---------- Rendering ---------- */
+
+const createReactionButton = (comment, reaction, activeReaction) => {
+    const isActive = activeReaction === reaction;
+    const baseCount = reaction === 'like' ? comment.likes : comment.dislikes;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `comment-reaction comment-${reaction}-button`;
+    button.classList.toggle('active', isActive);
+    button.dataset.reaction = reaction;
+    button.setAttribute('aria-pressed', String(isActive));
+    button.setAttribute('aria-label', reaction === 'like' ? 'Like comment' : 'Dislike comment');
+
+    const icon = document.createElement('img');
+    icon.className = `comment-${reaction}-icon`;
+    icon.src = `icons/comment-${reaction}-icon.png`;
+    icon.alt = '';
+
+    const count = document.createElement('span');
+    count.className = `comment-${reaction}-count`;
+    count.textContent = baseCount + (isActive ? 1 : 0);
+
+    button.append(icon, count);
+    return button;
+};
+
+const createCommentText = (text) => {
+    const content = document.createElement('span');
+    content.className = 'comment-content';
+
+    const textNode = document.createElement('span');
+    textNode.textContent = text;
+    content.append(textNode);
+
+    if (text.length > READ_MORE_LIMIT) {
+        const shortText = `${text.substring(0, READ_MORE_LIMIT)}...`;
+        textNode.textContent = shortText;
+
+        const readMore = document.createElement('button');
+        readMore.type = 'button';
+        readMore.className = 'read-more';
+        readMore.textContent = 'read more';
+        readMore.setAttribute('aria-expanded', 'false');
+
+        readMore.addEventListener('click', () => {
+            const isExpanded = content.classList.toggle('expanded');
+            textNode.textContent = isExpanded ? text : shortText;
+            readMore.textContent = isExpanded ? 'show less' : 'read more';
+            readMore.setAttribute('aria-expanded', String(isExpanded));
+        });
+
+        content.append(' ', readMore);
+    }
+
+    return content;
+};
+
+const createCommentElement = (comment, reactions = getCommentReactions()) => {
+    const commentDiv = document.createElement('div');
+    commentDiv.className = 'comment';
+    commentDiv.dataset.commentId = comment.id;
+
+    const leftDiv = document.createElement('div');
+    leftDiv.className = 'comment-left-div';
+    const avatar = document.createElement('img');
+    avatar.className = 'avatar';
+    avatar.src = comment.avatar || 'icons/user-icon-black.png';
+    avatar.alt = '';
+    leftDiv.append(avatar);
+
+    const midDiv = document.createElement('div');
+    midDiv.className = 'comment-mid-div';
+
+    const header = document.createElement('div');
+    header.className = 'mid-header';
+    const userName = document.createElement('span');
+    userName.className = 'comment-user-name';
+    userName.textContent = comment.userName;
+    const createdDate = document.createElement('span');
+    createdDate.className = 'created-date';
+    createdDate.textContent = timeAgo(comment.timeStamp);
+    header.append(userName, createdDate);
+
+    const bottom = document.createElement('div');
+    bottom.className = 'mid-bottom-container';
+    const activeReaction = reactions[comment.id] || null;
+    bottom.append(
+        createReactionButton(comment, 'like', activeReaction),
+        createReactionButton(comment, 'dislike', activeReaction)
+    );
+
+    if (comment.isOwn) {
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'delete-comment-button';
+        deleteButton.textContent = 'Delete';
+        bottom.append(deleteButton);
+    }
+
+    midDiv.append(header, createCommentText(comment.text), bottom);
+    commentDiv.append(leftDiv, midDiv);
+
+    return commentDiv;
+};
+
+export const renderComments = (video, commentsContainer) => {
+    commentsContainer.replaceChildren();
+
+    if (video.commentList.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'no-comments';
+        empty.textContent = 'No comments yet. Be the first!';
+        commentsContainer.append(empty);
+        return;
+    }
+
+    const reactions = getCommentReactions();
+    const fragment = document.createDocumentFragment();
+    video.commentList.forEach(comment => fragment.append(createCommentElement(comment, reactions)));
+    commentsContainer.append(fragment);
+};
+
+/* ---------- Drag to resize ---------- */
+
+const setupDragHandle = (commentContainer, dragHandle) => {
     let startY = 0;
     let startHeight = 0;
-    const minHeight = 150;
-    const maxHeight = window.innerHeight * 0.85;
 
-    const onMouseDown = (e) => {
-        isDragging = true;
-        startY = e.clientY || e.touches[0].clientY;
+    const getY = (event) => (event.touches ? event.touches[0].clientY : event.clientY);
+
+    const onMove = (event) => {
+        const maxHeight = (commentContainer.parentElement?.clientHeight || window.innerHeight) * 0.85;
+        const newHeight = clamp(startHeight + (startY - getY(event)), MIN_PANEL_HEIGHT, maxHeight);
+
+        commentContainer.style.height = `${newHeight}px`;
+        event.preventDefault();
+    };
+
+    const onEnd = () => {
+        commentContainer.style.transition = '';
+        dragHandle.classList.remove('dragging');
+        lastDragEndedAt = Date.now();
+
+        // Listeners only live during a drag, so nothing leaks when the panel is removed.
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchend', onEnd);
+        document.removeEventListener('touchcancel', onEnd);
+    };
+
+    const onStart = (event) => {
+        startY = getY(event);
         startHeight = commentContainer.offsetHeight;
 
         commentContainer.style.transition = 'none';
         dragHandle.classList.add('dragging');
 
-        e.preventDefault();
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
+        document.addEventListener('touchcancel', onEnd);
+
+        event.preventDefault();
     };
 
-    const onMouseMove = (e) => {
-        if (!isDragging) return;
-
-        const currentY = e.clientY || e.touches[0].clientY;
-        const deltaY = startY - currentY;
-        let newHeight = startHeight + deltaY;
-
-        newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
-
-        commentContainer.style.height = `${newHeight}px`;
-
-        e.preventDefault();
-    };
-
-    const onMouseUp = () => {
-        if (!isDragging) return;
-
-        isDragging = false;
-        commentContainer.style.transition = '';
-        dragHandle.classList.remove('dragging');
-    };
-
-    dragHandle.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-
-    dragHandle.addEventListener('touchstart', onMouseDown);
-    document.addEventListener('touchmove', onMouseMove, { passive: false });
-    document.addEventListener('touchend', onMouseUp);
-
-    commentContainer._dragCleanup = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        document.removeEventListener('touchmove', onMouseMove);
-        document.removeEventListener('touchend', onMouseUp);
-    };
-};
-
-export const closeCommentSection = (commentContainer) => {
-    const slider = document.querySelector('.slider');
-
-    const restoreScroll = () => {
-        if (slider) slider.style.overflowY = 'auto';
-    };
-
-    const cleanUpContainer = (container) => {
-        if (container._dragCleanup) {
-            container._dragCleanup();
-        }
-    };
-
-    if (commentContainer) {
-        commentContainer.classList.remove('active');
-        commentContainer.addEventListener('transitionend', () => {
-            cleanUpContainer(commentContainer);
-            commentContainer.remove();
-        }, { once: true });
-
-        if (!document.querySelector('.comment-container.active')) {
-            restoreScroll();
-        }
-    }
-};
-
-export const closeAllCommentSections = () => {
-    const commentContainers = document.querySelectorAll('.comment-container');
-    const slider = document.querySelector('.slider');
-
-    commentContainers.forEach(container => {
-        container.classList.remove('active');
-        container.addEventListener('transitionend', () => {
-            if (container._dragCleanup) container._dragCleanup();
-            container.remove();
-        }, { once: true });
-    });
-
-    if (slider) slider.style.overflowY = 'auto';
+    dragHandle.addEventListener('mousedown', onStart);
+    dragHandle.addEventListener('touchstart', onStart, { passive: false });
 };
