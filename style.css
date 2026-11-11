@@ -549,6 +549,83 @@ input.input-bottom {
   align-items: center;
 }
 
+/* ---------- Volume ---------- */
+
+.volume-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Opens to the left of the sound button on hover or keyboard focus. */
+.volume-slider {
+  --volume: 100%;
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  width: 90px;
+  height: 4px;
+  margin: 0 8px 0 0;
+  transform: translateY(-50%);
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 2px;
+  background: linear-gradient(to right, #fff var(--volume), rgba(255, 255, 255, 0.35) var(--volume));
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+/* Invisible bridge so the mouse can move from the button to the slider without closing it. */
+.volume-control::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  width: 106px;
+  pointer-events: none;
+}
+
+.volume-control:hover::before {
+  pointer-events: auto;
+}
+
+.volume-control:hover .volume-slider,
+.volume-control:focus-within .volume-slider {
+  opacity: 1;
+  visibility: visible;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.volume-slider:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+/* Touch screens have no hover, and phones have hardware volume keys. */
+@media (hover: none) {
+  .volume-slider {
+    display: none;
+  }
+}
+
 .bottom-container {
   display: flex;
   flex-direction: column;
