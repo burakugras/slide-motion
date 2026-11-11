@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { loadNextPage } from './feed.js';
-import { playVideo, pauseVideo, hidePlayIcon } from './videoPlayer.js';
+import { playVideo, pauseVideo, hidePlayIcon, preloadUpcoming } from './videoPlayer.js';
 import { closeAllCommentSections } from './comments.js';
 
 const PRELOAD_DISTANCE = 2; // start loading when one of the last N videos is visible
@@ -23,6 +23,7 @@ const activateVideo = (video) => {
     // play() waits for data by itself; if the video leaves the screen first,
     // pauseVideo() aborts the pending play, so no off-screen video can start.
     playVideo(video);
+    preloadUpcoming(video);
 };
 
 export const setupObserver = () => {

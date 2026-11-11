@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { fetchVideos } from '../services/api.js';
 import { renderVideos, showFeedMessage } from './ui.js';
+import { preloadUpcoming } from './videoPlayer.js';
 
 export const loadNextPage = async () => {
     if (state.isLoading || !state.hasMore) return;
@@ -21,6 +22,8 @@ export const loadNextPage = async () => {
 
         state.page = nextPage;
         renderVideos(result.videos);
+        // If the current video was the last one, its "next" videos only exist now.
+        preloadUpcoming(state.currentPlayingVideo);
 
         const totalPages = Math.ceil(result.totalHits / state.pageSize);
 

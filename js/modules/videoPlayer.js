@@ -1,6 +1,26 @@
 import { state } from '../state.js';
 import { formatTime } from '../utils/helpers.js';
 
+// How many videos after the current one are buffered in advance.
+const UPCOMING_PRELOAD_COUNT = 2;
+
+/**
+ * Videos are created with preload="metadata" (no frames are downloaded).
+ * Upgrading the next few to "auto" lets the browser buffer them while the
+ * current one plays, so scrolling to them does not show the loading icon.
+ */
+export const preloadUpcoming = (video) => {
+    if (!video) return;
+
+    const videos = Array.from(document.querySelectorAll('.video-player'));
+    const index = videos.indexOf(video);
+    if (index === -1) return;
+
+    videos.slice(index + 1, index + 1 + UPCOMING_PRELOAD_COUNT).forEach(next => {
+        if (next.preload !== 'auto') next.preload = 'auto';
+    });
+};
+
 export const showPlayIcon = (videoPlayerContainer) => {
     if (!videoPlayerContainer || videoPlayerContainer.querySelector('.play-icon')) return;
 
