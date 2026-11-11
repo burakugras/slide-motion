@@ -277,12 +277,50 @@ const releaseVideo = (video) => {
     video.load();
 };
 
+/* ---------- Scroll idle tracking ---------- */
+
+// Removing cards above the viewport means correcting scrollTop. Doing that while a
+// wheel / smooth / snap scroll is still animating makes the animation continue from
+// the corrected position, so the feed drifts to another video. Trimming therefore
+// waits until scrolling has been idle for a moment.
+const SCROLL_IDLE_MS = 200;
+let isScrolling = false;
+let scrollIdleTimer = null;
+let isTrimPending = false;
+let isScrollTrackingSetUp = false;
+
+const setupScrollTracking = (slider) => {
+    if (isScrollTrackingSetUp) return;
+    isScrollTrackingSetUp = true;
+
+    slider.addEventListener('scroll', () => {
+        isScrolling = true;
+        clearTimeout(scrollIdleTimer);
+
+        scrollIdleTimer = setTimeout(() => {
+            isScrolling = false;
+
+            if (isTrimPending) {
+                isTrimPending = false;
+                optimizePage();
+            }
+        }, SCROLL_IDLE_MS);
+    }, { passive: true });
+};
+
 /** Keeps the DOM small by removing old cards from the top of the feed. */
 export const optimizePage = () => {
     const slider = getSlider();
+    setupScrollTracking(slider);
+
     const cards = Array.from(slider.querySelectorAll('.video-card'));
 
     if (cards.length <= MAX_CARDS) return;
+
+    if (isScrolling) {
+        isTrimPending = true;
+        return;
+    }
 
     const cardsToRemove = cards.slice(0, cards.length - CARDS_TO_KEEP);
     const scrollTop = slider.scrollTop;
