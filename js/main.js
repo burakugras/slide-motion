@@ -5,7 +5,9 @@ import { loadNextPage } from './modules/feed.js';
 import { addEvents } from './handlers.js';
 
 const init = () => {
-    state.isAutoSlideEnabled = getSettings().isAutoSlideEnabled;
+    const settings = getSettings();
+    state.isAutoSlideEnabled = settings.isAutoSlideEnabled;
+    state.volume = settings.volume;
 
     setupObserver();
     addEvents();

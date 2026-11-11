@@ -44,6 +44,7 @@ const createVideoPlayer = (video, videoCard, loadingContainer) => {
         loop: !state.isAutoSlideEnabled,
         playsInline: true,
         muted: state.isMuted,
+        volume: state.volume,
         preload: 'metadata',
         src: video.videoUrl
     });
@@ -85,14 +86,35 @@ const createAutoSlideToggle = (video) => {
     return container;
 };
 
+// The slider shows 0 while muted, like most players; the real volume is kept in state.
+export const getSliderValue = () => (state.isMuted ? 0 : Math.round(state.volume * 100));
+
+const createVolumeControl = () => {
+    const container = createElement('div', 'volume-control');
+
+    const muteButton = createIconButton('mute-button', 'sound-icon', getSoundIconSrc(state.isMuted), 'Toggle sound');
+    muteButton.setAttribute('aria-pressed', String(state.isMuted));
+    muteButton.querySelector('.sound-icon').classList.toggle('muted-sound-icon', state.isMuted);
+
+    const slider = createElement('input', 'volume-slider', {
+        type: 'range',
+        min: 0,
+        max: 100,
+        step: 1,
+        value: getSliderValue()
+    });
+    slider.setAttribute('aria-label', 'Volume');
+    slider.style.setProperty('--volume', `${slider.value}%`);
+
+    container.append(slider, muteButton);
+    return container;
+};
+
 const createButtons = (video, status) => {
     const buttonContainer = createElement('div', 'button-container');
 
     const topContainer = createElement('div', 'top-container');
-    const muteButton = createIconButton('mute-button', 'sound-icon', getSoundIconSrc(state.isMuted), 'Toggle sound');
-    muteButton.setAttribute('aria-pressed', String(state.isMuted));
-    muteButton.querySelector('.sound-icon').classList.toggle('muted-sound-icon', state.isMuted);
-    topContainer.append(muteButton);
+    topContainer.append(createVolumeControl());
 
     const bottomContainer = createElement('div', 'bottom-container');
 

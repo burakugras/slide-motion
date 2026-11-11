@@ -3,7 +3,7 @@ const STATUSES_KEY = 'statuses';
 const COMMENTS_KEY = 'comments';
 const REACTIONS_KEY = 'commentReactions';
 
-const DEFAULT_SETTINGS = { isAutoSlideEnabled: true };
+const DEFAULT_SETTINGS = { isAutoSlideEnabled: true, volume: 1 };
 
 const readJSON = (key, fallback) => {
     try {
@@ -38,11 +38,18 @@ export const getSettings = () => {
     // `isAutoSlideEnable` is the old (misspelled) key; read it for backwards compatibility.
     const isAutoSlideEnabled = stored.isAutoSlideEnabled ?? stored.isAutoSlideEnable ?? DEFAULT_SETTINGS.isAutoSlideEnabled;
 
-    return { isAutoSlideEnabled: Boolean(isAutoSlideEnabled) };
+    const volume = Number(stored.volume);
+
+    return {
+        isAutoSlideEnabled: Boolean(isAutoSlideEnabled),
+        volume: Number.isFinite(volume) ? Math.min(Math.max(volume, 0), 1) : DEFAULT_SETTINGS.volume
+    };
 };
 
+// Merge with the stored settings so saving one field does not drop the others.
 export const saveSettings = (settings) => {
-    writeJSON(SETTINGS_KEY, settings);
+    const stored = readJSON(SETTINGS_KEY, null);
+    writeJSON(SETTINGS_KEY, { ...(isPlainObject(stored) ? stored : {}), ...settings });
 };
 
 /* ---------- Like / save statuses ---------- */

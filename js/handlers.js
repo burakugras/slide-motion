@@ -6,6 +6,7 @@ import {
     autoSlideLabel,
     getLikeIconSrc,
     getSaveIconSrc,
+    getSliderValue,
     getSoundIconSrc,
     showToast
 } from './modules/ui.js';
@@ -22,8 +23,9 @@ const getCardStatus = (card) => ({
 
 /* ---------- Click handlers ---------- */
 
-const handleMute = () => {
-    state.isMuted = !state.isMuted;
+// Push state.isMuted / state.volume to every card (all cards share one sound setting).
+const syncSound = (sourceSlider = null) => {
+    const sliderValue = getSliderValue();
 
     document.querySelectorAll('.mute-button').forEach(button => {
         button.setAttribute('aria-pressed', String(state.isMuted));
@@ -32,9 +34,46 @@ const handleMute = () => {
         icon.classList.toggle('muted-sound-icon', state.isMuted);
     });
 
+    document.querySelectorAll('.volume-slider').forEach(slider => {
+        // Don't rewrite the slider being dragged; it already has the right value.
+        if (slider !== sourceSlider) slider.value = sliderValue;
+        slider.style.setProperty('--volume', `${sliderValue}%`);
+    });
+
     document.querySelectorAll('.video-player').forEach(videoPlayer => {
         videoPlayer.muted = state.isMuted;
+        videoPlayer.volume = state.volume;
     });
+};
+
+const handleMute = () => {
+    state.isMuted = !state.isMuted;
+
+    // Unmuting at volume 0 would still be silent, so bring it back to full.
+    if (!state.isMuted && state.volume === 0) {
+        state.volume = 1;
+        saveSettings({ volume: state.volume });
+    }
+
+    syncSound();
+};
+
+const handleVolumeInput = (event) => {
+    const slider = event.target;
+    if (!slider.classList.contains('volume-slider')) return;
+
+    const volume = Number(slider.value) / 100;
+
+    // Dragging to 0 mutes; the last audible volume is kept so unmuting restores it.
+    if (volume === 0) {
+        state.isMuted = true;
+    } else {
+        state.isMuted = false;
+        state.volume = volume;
+        saveSettings({ volume });
+    }
+
+    syncSound(slider);
 };
 
 const handleLike = (likeButton) => {
@@ -162,5 +201,6 @@ const handleProgressHover = (event) => {
 export const addEvents = () => {
     document.addEventListener('click', handleClick);
     document.addEventListener('change', handleAutoSlideChange);
+    document.addEventListener('input', handleVolumeInput);
     document.addEventListener('mousemove', handleProgressHover);
 };
