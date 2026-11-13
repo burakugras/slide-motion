@@ -8,6 +8,7 @@ const init = () => {
     const settings = getSettings();
     state.isAutoSlideEnabled = settings.isAutoSlideEnabled;
     state.volume = settings.volume;
+    state.quality = settings.quality;
 
     setupObserver();
     addEvents();

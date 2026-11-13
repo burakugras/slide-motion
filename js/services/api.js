@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { generateMockComments } from '../utils/helpers.js';
 import { getUserComments } from './storage.js';
+import { buildSources } from '../modules/quality.js';
 
 let apiUrlPromise = null;
 
@@ -16,11 +17,6 @@ const getApiUrl = () => {
     return apiUrlPromise;
 };
 
-const pickVideoUrl = (video) => {
-    const sources = video.videos || {};
-    return sources.small?.url || sources.medium?.url || sources.tiny?.url || sources.large?.url || '';
-};
-
 const enhanceVideo = (video) => {
     const commentList = [
         ...getUserComments(video.id),
@@ -29,7 +25,8 @@ const enhanceVideo = (video) => {
 
     return {
         ...video,
-        videoUrl: pickVideoUrl(video),
+        // Every available file, by resolution; the player picks one (see quality.js).
+        sources: buildSources(video.videos),
         commentList
     };
 };
@@ -58,7 +55,7 @@ export const fetchVideos = async (page, pageSize) => {
 
         const videos = data.hits
             .map(enhanceVideo)
-            .filter(video => video.videoUrl);
+            .filter(video => video.sources.length > 0);
 
         state.allVideos.push(...videos);
 
