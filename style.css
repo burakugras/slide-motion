@@ -91,9 +91,116 @@ body {
   box-sizing: border-box;
 }
 
-/* ---------- Loading / play overlay ---------- */
+/* ---------- Loading skeleton ---------- */
 
-.loading-container,
+/* Covers the video until it can play. Buttons and info (z-index 5) stay on top. */
+.video-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background-color: rgb(58, 58, 58);
+  /* Clicks must reach the video underneath (play/pause). */
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* A soft band of light sweeping left to right. */
+.video-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(100deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.08) 40%,
+      rgba(255, 255, 255, 0.14) 50%,
+      rgba(255, 255, 255, 0.08) 60%,
+      transparent 80%);
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+/* Kept in the DOM (a retry may need it again), just faded out. */
+.video-skeleton.is-done {
+  opacity: 0;
+}
+
+/* No point animating something hidden or a load that already failed. */
+.video-skeleton.is-done::after,
+.video-skeleton.is-failed::after {
+  animation: none;
+  opacity: 0;
+}
+
+/* ---------- Load error ---------- */
+
+/* Above the skeleton, below the side buttons and info (z-index 5). */
+.video-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: max-content;
+  max-width: 70%;
+  padding: 20px 24px;
+  border-radius: 12px;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  text-align: center;
+}
+
+.video-error[hidden] {
+  display: none;
+}
+
+.video-error-text {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.video-retry-button {
+  padding: 8px 22px;
+  border: none;
+  border-radius: 999px;
+  background-color: #fff;
+  color: #222;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.video-retry-button:hover {
+  background-color: #e4e4e4;
+}
+
+.video-retry-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* No moving shimmer for people who asked the OS to reduce motion. */
+@media (prefers-reduced-motion: reduce) {
+  .video-skeleton::after {
+    animation: none;
+    transform: none;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* ---------- Play overlay ---------- */
+
 .play-icon {
   position: absolute;
   display: flex;
@@ -107,22 +214,6 @@ body {
   transform: translate(-50%, -50%);
   /* Clicks must reach the video underneath (play/pause). */
   pointer-events: none;
-}
-
-.loading-icon {
-  width: 50px;
-  height: 50px;
-  animation: loader 2s linear infinite;
-}
-
-@keyframes loader {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ---------- Generic buttons ---------- */
