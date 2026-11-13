@@ -32,13 +32,85 @@ export const getSoundIconSrc = (isMuted) => (isMuted ? 'icons/muted-sound-icon.p
 
 /* ---------- Card parts ---------- */
 
+// How long the user waits for a video before we show the error and Reload button.
+const LOAD_TIMEOUT_MS = 10000;
+
+// Placeholder over the video area until the first frame is ready.
 const createLoading = () => {
-    const loadingContainer = createElement('div', 'loading-container');
-    loadingContainer.append(createElement('img', 'loading-icon', { src: 'icons/loading-icon.png', alt: 'Loading' }));
-    return loadingContainer;
+    const skeleton = createElement('div', 'video-skeleton');
+    skeleton.setAttribute('role', 'status');
+    skeleton.setAttribute('aria-label', 'Loading video');
+    return skeleton;
 };
 
-const createVideoPlayer = (video, videoCard, loadingContainer) => {
+const createLoadError = () => {
+    const errorBox = createElement('div', 'video-error', { hidden: true });
+    errorBox.setAttribute('role', 'alert');
+    errorBox.append(
+        createElement('p', 'video-error-text', { textContent: "This video couldn't be loaded." }),
+        createElement('button', 'video-retry-button', { type: 'button', textContent: 'Reload' })
+    );
+    return errorBox;
+};
+
+/**
+ * Skeleton while the video loads; error + Reload button if it fails or is too slow.
+ * The timer only runs while the video is trying to play (i.e. it is on screen),
+ * because off-screen videos are not downloaded on purpose.
+ */
+const trackLoading = (videoPlayer, skeleton, errorBox) => {
+    let timer = null;
+
+    const clearTimer = () => {
+        clearTimeout(timer);
+        timer = null;
+    };
+
+    const isReady = () => videoPlayer.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
+
+    const showError = () => {
+        clearTimer();
+        skeleton.classList.remove('is-done');
+        skeleton.classList.add('is-failed');
+        errorBox.hidden = false;
+    };
+
+    const onReady = () => {
+        clearTimer();
+        errorBox.hidden = true;
+        skeleton.classList.remove('is-failed');
+        skeleton.classList.add('is-done');
+    };
+
+    videoPlayer.addEventListener('play', () => {
+        if (isReady() || timer || !errorBox.hidden) return;
+        timer = setTimeout(showError, LOAD_TIMEOUT_MS);
+    });
+    videoPlayer.addEventListener('pause', clearTimer);
+    videoPlayer.addEventListener('canplay', onReady);
+    videoPlayer.addEventListener('playing', onReady);
+    videoPlayer.addEventListener('error', () => {
+        // Trimmed cards drop their src on purpose; that is not a real error.
+        if (videoPlayer.getAttribute('src')) showError();
+    });
+
+    errorBox.querySelector('.video-retry-button').addEventListener('click', () => {
+        const resumeAt = videoPlayer.currentTime;
+
+        errorBox.hidden = true;
+        skeleton.classList.remove('is-failed', 'is-done');
+
+        videoPlayer.load();
+        if (resumeAt > 0) {
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                videoPlayer.currentTime = resumeAt;
+            }, { once: true });
+        }
+        playVideo(videoPlayer);
+    });
+};
+
+const createVideoPlayer = (video, videoCard) => {
     const videoPlayer = createElement('video', 'video-player', {
         autoplay: false,
         loop: !state.isAutoSlideEnabled,
@@ -48,10 +120,6 @@ const createVideoPlayer = (video, videoCard, loadingContainer) => {
         preload: 'metadata',
         src: video.videoUrl
     });
-
-    const hideLoading = () => loadingContainer.remove();
-    videoPlayer.addEventListener('canplay', hideLoading, { once: true });
-    videoPlayer.addEventListener('playing', hideLoading, { once: true });
 
     videoPlayer.addEventListener('ended', () => {
         if (!state.isAutoSlideEnabled) return;
@@ -211,12 +279,15 @@ const createVideoCard = (video, status) => {
     videoCard.dataset.videoId = video.id;
 
     const videoPlayerContainer = createElement('div', 'video-player-container');
-    const loadingContainer = createLoading();
-    const videoPlayer = createVideoPlayer(video, videoCard, loadingContainer);
+    const skeleton = createLoading();
+    const errorBox = createLoadError();
+    const videoPlayer = createVideoPlayer(video, videoCard);
+    trackLoading(videoPlayer, skeleton, errorBox);
 
     videoPlayerContainer.append(
-        loadingContainer,
+        skeleton,
         videoPlayer,
+        errorBox,
         createAutoSlideToggle(video),
         createButtons(video, status),
         createInfo(video),
