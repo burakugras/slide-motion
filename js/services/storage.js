@@ -3,7 +3,8 @@ const STATUSES_KEY = 'statuses';
 const COMMENTS_KEY = 'comments';
 const REACTIONS_KEY = 'commentReactions';
 
-const DEFAULT_SETTINGS = { isAutoSlideEnabled: true, volume: 1 };
+// quality: 'auto' or the preferred resolution as the video's short side (e.g. 720).
+const DEFAULT_SETTINGS = { isAutoSlideEnabled: true, volume: 1, quality: 'auto' };
 
 const readJSON = (key, fallback) => {
     try {
@@ -39,10 +40,12 @@ export const getSettings = () => {
     const isAutoSlideEnabled = stored.isAutoSlideEnabled ?? stored.isAutoSlideEnable ?? DEFAULT_SETTINGS.isAutoSlideEnabled;
 
     const volume = Number(stored.volume);
+    const quality = Number(stored.quality);
 
     return {
         isAutoSlideEnabled: Boolean(isAutoSlideEnabled),
-        volume: Number.isFinite(volume) ? Math.min(Math.max(volume, 0), 1) : DEFAULT_SETTINGS.volume
+        volume: Number.isFinite(volume) ? Math.min(Math.max(volume, 0), 1) : DEFAULT_SETTINGS.volume,
+        quality: Number.isInteger(quality) && quality > 0 ? quality : DEFAULT_SETTINGS.quality
     };
 };
 

@@ -3,6 +3,7 @@ import { getVideoStatuses } from '../services/storage.js';
 import { formatTime } from '../utils/helpers.js';
 import { attachProgressTracking, pauseVideo, playVideo } from './videoPlayer.js';
 import { isCommentSectionOpen } from './comments.js';
+import { createQualityControl, pickSource, registerSources } from './quality.js';
 
 const MAX_CARDS = 20;
 const CARDS_TO_KEEP = 15;
@@ -93,6 +94,15 @@ const trackLoading = (videoPlayer, container, overlays, errorBox) => {
         timer = setTimeout(showError, LOAD_TIMEOUT_MS);
     });
     videoPlayer.addEventListener('pause', clearTimer);
+    // A new file (quality change, Reload) starts loading from scratch: show the skeleton again.
+    videoPlayer.addEventListener('emptied', () => {
+        // Trimmed cards drop their src on purpose; nothing to show there.
+        if (!videoPlayer.getAttribute('src')) return;
+        clearTimer();
+        errorBox.hidden = true;
+        container.classList.remove('is-failed');
+        setSkeleton(container, overlays, true);
+    });
     videoPlayer.addEventListener('canplay', onReady);
     videoPlayer.addEventListener('playing', onReady);
     videoPlayer.addEventListener('error', () => {
@@ -125,8 +135,9 @@ const createVideoPlayer = (video, videoCard) => {
         muted: state.isMuted,
         volume: state.volume,
         preload: 'metadata',
-        src: video.videoUrl
+        src: pickSource(video.sources)?.url ?? ''
     });
+    registerSources(videoPlayer, video.sources);
 
     videoPlayer.addEventListener('ended', () => {
         if (!state.isAutoSlideEnabled) return;
@@ -212,7 +223,7 @@ const createButtons = (video, status) => {
     saveButton.setAttribute('aria-pressed', String(status.isSaved));
     saveButton.querySelector('.save-icon').classList.toggle('saved-icon', status.isSaved);
 
-    bottomContainer.append(likeButton, commentButton, shareButton, saveButton);
+    bottomContainer.append(likeButton, commentButton, shareButton, saveButton, createQualityControl());
     buttonContainer.append(topContainer, bottomContainer);
     return buttonContainer;
 };

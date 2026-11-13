@@ -11,6 +11,7 @@ import {
     showToast
 } from './modules/ui.js';
 import { formatTime } from './utils/helpers.js';
+import { chooseQuality, closeQualityMenus, handleQualityKeydown, toggleQualityMenu } from './modules/quality.js';
 
 const getCard = (element) => element.closest('.video-card');
 const getVideoId = (card) => Number(card.dataset.videoId);
@@ -139,6 +140,8 @@ const handleProgressClick = (event, progressBarContainer) => {
 };
 
 const CLICK_HANDLERS = [
+    ['.quality-option', chooseQuality],
+    ['.quality-button', toggleQualityMenu],
     ['.mute-button', handleMute],
     ['.like-button', handleLike],
     ['.save-button', handleSave],
@@ -150,6 +153,8 @@ const CLICK_HANDLERS = [
 
 const handleClick = (event) => {
     handleOutsideClick(event);
+    // Any click outside a quality menu closes it.
+    closeQualityMenus(event.target.closest('.quality-control'));
 
     for (const [selector, handler] of CLICK_HANDLERS) {
         const element = event.target.closest(selector);
@@ -203,4 +208,5 @@ export const addEvents = () => {
     document.addEventListener('change', handleAutoSlideChange);
     document.addEventListener('input', handleVolumeInput);
     document.addEventListener('mousemove', handleProgressHover);
+    document.addEventListener('keydown', handleQualityKeydown);
 };

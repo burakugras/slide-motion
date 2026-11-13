@@ -791,6 +791,84 @@ input.input-bottom {
   }
 }
 
+/* ---------- Quality menu ---------- */
+
+/* Above the info box and time (5-6) while the menu is open; below comments (15). */
+.button-container.menu-open {
+  z-index: 8;
+}
+
+.quality-control {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* Opens to the left of the gear, bottom-aligned with it. */
+.quality-menu {
+  position: absolute;
+  right: calc(100% + 12px);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 6px;
+  border-radius: 12px;
+  background-color: rgba(24, 24, 24, 0.92);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.quality-menu[hidden] {
+  display: none;
+}
+
+.quality-title {
+  padding: 6px 10px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.quality-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Fixed-width slot for the check mark, so labels stay aligned. */
+.quality-option::before {
+  content: '';
+  width: 1em;
+  text-align: center;
+}
+
+.quality-option[aria-checked="true"] {
+  font-weight: 600;
+}
+
+.quality-option[aria-checked="true"]::before {
+  content: '✓';
+}
+
+.quality-option:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.quality-option:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
 .bottom-container {
   display: flex;
   flex-direction: column;
@@ -810,7 +888,8 @@ input.input-bottom {
 .like-icon,
 .comment-icon,
 .share-icon,
-.save-icon {
+.save-icon,
+.quality-icon {
   max-width: 90%;
   height: auto;
   object-fit: contain;
@@ -983,7 +1062,8 @@ input.input-bottom {
   .like-icon,
   .comment-icon,
   .share-icon,
-  .save-icon {
+  .save-icon,
+  .quality-icon {
     max-width: 80%;
   }
 

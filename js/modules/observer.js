@@ -2,6 +2,7 @@ import { state } from '../state.js';
 import { loadNextPage } from './feed.js';
 import { playVideo, pauseVideo, hidePlayIcon, preloadUpcoming } from './videoPlayer.js';
 import { closeAllCommentSections } from './comments.js';
+import { closeQualityMenus } from './quality.js';
 
 const PRELOAD_DISTANCE = 2; // start loading when one of the last N videos is visible
 
@@ -17,6 +18,7 @@ const maybeLoadMore = (video) => {
 const activateVideo = (video) => {
     maybeLoadMore(video);
     closeAllCommentSections({ immediate: true });
+    closeQualityMenus();
     hidePlayIcon(video.closest('.video-player-container'));
 
     video.currentTime = 0;
