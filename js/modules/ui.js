@@ -35,12 +35,15 @@ export const getSoundIconSrc = (isMuted) => (isMuted ? 'icons/muted-sound-icon.p
 // How long the user waits for a video before we show the error and Reload button.
 const LOAD_TIMEOUT_MS = 10000;
 
-// Placeholder over the video area until the first frame is ready.
-const createLoading = () => {
-    const skeleton = createElement('div', 'video-skeleton');
-    skeleton.setAttribute('role', 'status');
-    skeleton.setAttribute('aria-label', 'Loading video');
-    return skeleton;
+/**
+ * Skeleton mode: while `.is-loading` is on the container, CSS turns the real
+ * buttons, texts and toggle into gray placeholders of the same size and place,
+ * and a light band sweeps over them. `inert` makes them unclickable meanwhile.
+ */
+const setSkeleton = (container, overlays, isLoading) => {
+    container.classList.toggle('is-loading', isLoading);
+    container.setAttribute('aria-busy', String(isLoading));
+    overlays.forEach(element => { element.inert = isLoading; });
 };
 
 const createLoadError = () => {
@@ -58,8 +61,10 @@ const createLoadError = () => {
  * The timer only runs while the video is trying to play (i.e. it is on screen),
  * because off-screen videos are not downloaded on purpose.
  */
-const trackLoading = (videoPlayer, skeleton, errorBox) => {
+const trackLoading = (videoPlayer, container, overlays, errorBox) => {
     let timer = null;
+
+    setSkeleton(container, overlays, true);
 
     const clearTimer = () => {
         clearTimeout(timer);
@@ -68,18 +73,19 @@ const trackLoading = (videoPlayer, skeleton, errorBox) => {
 
     const isReady = () => videoPlayer.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
 
+    // On failure the real buttons come back, so the user can still like/scroll.
     const showError = () => {
         clearTimer();
-        skeleton.classList.remove('is-done');
-        skeleton.classList.add('is-failed');
+        setSkeleton(container, overlays, false);
+        container.classList.add('is-failed');
         errorBox.hidden = false;
     };
 
     const onReady = () => {
         clearTimer();
         errorBox.hidden = true;
-        skeleton.classList.remove('is-failed');
-        skeleton.classList.add('is-done');
+        container.classList.remove('is-failed');
+        setSkeleton(container, overlays, false);
     };
 
     videoPlayer.addEventListener('play', () => {
@@ -98,7 +104,8 @@ const trackLoading = (videoPlayer, skeleton, errorBox) => {
         const resumeAt = videoPlayer.currentTime;
 
         errorBox.hidden = true;
-        skeleton.classList.remove('is-failed', 'is-done');
+        container.classList.remove('is-failed');
+        setSkeleton(container, overlays, true);
 
         videoPlayer.load();
         if (resumeAt > 0) {
@@ -279,26 +286,60 @@ const createVideoCard = (video, status) => {
     videoCard.dataset.videoId = video.id;
 
     const videoPlayerContainer = createElement('div', 'video-player-container');
-    const skeleton = createLoading();
     const errorBox = createLoadError();
     const videoPlayer = createVideoPlayer(video, videoCard);
-    trackLoading(videoPlayer, skeleton, errorBox);
-
-    videoPlayerContainer.append(
-        skeleton,
-        videoPlayer,
-        errorBox,
+    const overlays = [
         createAutoSlideToggle(video),
         createButtons(video, status),
         createInfo(video),
         ...createProgress(video)
-    );
+    ];
+
+    videoPlayerContainer.append(videoPlayer, errorBox, ...overlays);
+    trackLoading(videoPlayer, videoPlayerContainer, overlays, errorBox);
 
     attachProgressTracking(videoPlayer, videoPlayerContainer);
     videoCard.append(videoPlayerContainer);
 
     return { videoCard, videoPlayer };
 };
+
+// Fake data only used to size the placeholders of the first-load skeleton card.
+const SKELETON_VIDEO = {
+    id: 'skeleton',
+    user: 'Loading user',
+    userImageURL: '',
+    tags: 'loading, placeholder, video, tags',
+    likes: 1000,
+    commentList: [],
+    duration: 0
+};
+
+// Shown before the first page arrives from the API, so the screen is never empty.
+const createSkeletonCard = () => {
+    const card = createElement('div', 'video-card skeleton-card');
+    const container = createElement('div', 'video-player-container');
+    const overlays = [
+        createAutoSlideToggle(SKELETON_VIDEO),
+        createButtons(SKELETON_VIDEO, { isLiked: false, isSaved: false }),
+        createInfo(SKELETON_VIDEO),
+        ...createProgress(SKELETON_VIDEO)
+    ];
+
+    container.append(...overlays);
+    setSkeleton(container, overlays, true);
+    card.append(container);
+    return card;
+};
+
+export const showFeedSkeleton = () => {
+    const slider = getSlider();
+    if (!slider || slider.querySelector('.video-card')) return;
+    slider.querySelector('.feed-message')?.remove();
+    slider.append(createSkeletonCard());
+};
+
+const removeFeedSkeleton = (slider) => slider.querySelector('.skeleton-card')?.remove();
 
 /* ---------- Public API ---------- */
 
@@ -318,6 +359,7 @@ export const renderVideos = (videos) => {
     });
 
     slider.querySelector('.feed-message')?.remove();
+    removeFeedSkeleton(slider);
     slider.append(fragment);
     players.forEach(player => state.observer?.observe(player));
 
@@ -335,6 +377,8 @@ export const scrollToNextVideo = (currentVideoCard) => {
 export const showFeedMessage = (text) => {
     const slider = getSlider();
     if (!slider) return;
+
+    removeFeedSkeleton(slider);
 
     let message = slider.querySelector('.feed-message');
     if (!message) {

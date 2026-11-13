@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { fetchVideos } from '../services/api.js';
-import { renderVideos, showFeedMessage } from './ui.js';
+import { renderVideos, showFeedMessage, showFeedSkeleton } from './ui.js';
 import { preloadUpcoming } from './videoPlayer.js';
 
 export const loadNextPage = async () => {
@@ -8,6 +8,9 @@ export const loadNextPage = async () => {
 
     state.isLoading = true;
     const nextPage = state.page + 1;
+
+    // Nothing on screen yet: show a placeholder card until the first page arrives.
+    if (state.page === 0) showFeedSkeleton();
 
     try {
         const result = await fetchVideos(nextPage, state.pageSize);

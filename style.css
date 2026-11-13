@@ -93,48 +93,135 @@ body {
 
 /* ---------- Loading skeleton ---------- */
 
-/* Covers the video until it can play. Buttons and info (z-index 5) stay on top. */
-.video-skeleton {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  background-color: rgb(58, 58, 58);
-  /* Clicks must reach the video underneath (play/pause). */
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+/*
+ * While `.is-loading` is on a card, the real controls are drawn as gray
+ * placeholders in their own place and size, and one light band sweeps over
+ * the whole card. `.is-failed` keeps the gray background behind the error box.
+ */
+.video-player-container {
+  --skeleton-bg: rgb(48, 48, 48);
+  --skeleton-shape: rgb(78, 78, 78);
 }
 
-/* A soft band of light sweeping left to right. */
-.video-skeleton::after {
+/* Gray surface over the video (z-index 1: under the controls at 5-6). */
+.video-player-container::before {
   content: '';
   position: absolute;
   inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(100deg,
-      transparent 20%,
-      rgba(255, 255, 255, 0.08) 40%,
-      rgba(255, 255, 255, 0.14) 50%,
-      rgba(255, 255, 255, 0.08) 60%,
-      transparent 80%);
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  z-index: 1;
+  background-color: var(--skeleton-bg);
+  opacity: 0;
+  /* Clicks must reach the video underneath (play/pause). */
+  pointer-events: none;
+  transition: opacity 0.35s ease;
 }
 
-/* Kept in the DOM (a retry may need it again), just faded out. */
-.video-skeleton.is-done {
+.video-player-container.is-loading::before,
+.video-player-container.is-failed::before {
+  opacity: 1;
+}
+
+/*
+ * The placeholders are inert, so clicks on them would fall through to the
+ * video and pause it. While loading, the surface swallows those clicks.
+ */
+.video-player-container.is-loading::before {
+  pointer-events: auto;
+}
+
+/* The shine: a bright, slanted band that crosses the card, then rests briefly. */
+.video-player-container.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Twice the card width, so the slanted band is never cut by its own edges. */
+  left: -50%;
+  width: 200%;
+  z-index: 7;
+  pointer-events: none;
+  background: linear-gradient(110deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.06) 43%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.06) 57%,
+      transparent 65%);
+  transform: translateX(-50%);
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+/*
+ * Placeholders: hide icons/text, keep their boxes, paint them as shapes.
+ * The long `.video-player-container.is-loading` prefix is on purpose: it must
+ * win over the normal rules (e.g. the green "checked" toggle, white info text).
+ */
+.video-player-container.is-loading .auto-slide-container .auto-play-button {
+  background-color: var(--skeleton-shape);
+  box-shadow: none;
+}
+
+.video-player-container.is-loading .auto-play-button::before {
   opacity: 0;
 }
 
-/* No point animating something hidden or a load that already failed. */
-.video-skeleton.is-done::after,
-.video-skeleton.is-failed::after {
-  animation: none;
+/* The circle is drawn on the icon itself, so it sits exactly where the icon is. */
+.video-player-container.is-loading .btn img {
+  border-radius: 50%;
+  background-color: var(--skeleton-shape);
+  /* Push the picture out of its box; the round background stays. */
+  object-position: -999px 0;
+}
+
+.video-player-container.is-loading .like-count,
+.video-player-container.is-loading .comment-count,
+.video-player-container.is-loading .user-name,
+.video-player-container.is-loading .time-text {
+  color: transparent;
+  border-radius: 4px;
+  background-color: var(--skeleton-shape);
+}
+
+.video-player-container.is-loading .user-icon {
+  background-color: var(--skeleton-shape);
+  /* Push the picture out of its box; the round background stays. */
+  object-position: -999px 0;
+}
+
+/* One bar per text line (the mask cuts the gaps between lines). */
+.video-player-container.is-loading .info-container .tag-container {
+  color: transparent;
+  background-color: var(--skeleton-shape);
+  border-radius: 4px;
+  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 1.05em, transparent 1.05em 1.5em);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 1.05em, transparent 1.05em 1.5em);
+}
+
+.video-player-container.is-loading .progress-bar {
   opacity: 0;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-50%);
+  }
+
+  /* Cross in 70% of the time, then pause off-screen. */
+  70%,
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+/* No moving shine for people who asked the OS to reduce motion. */
+@media (prefers-reduced-motion: reduce) {
+  .video-player-container.is-loading::after {
+    display: none;
+  }
 }
 
 /* ---------- Load error ---------- */
 
-/* Above the skeleton, below the side buttons and info (z-index 5). */
+/* Above the gray surface, below the side buttons and info (z-index 5). */
 .video-error {
   position: absolute;
   top: 50%;
@@ -182,21 +269,6 @@ body {
 .video-retry-button:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 3px;
-}
-
-@keyframes skeleton-shimmer {
-  to {
-    transform: translateX(100%);
-  }
-}
-
-/* No moving shimmer for people who asked the OS to reduce motion. */
-@media (prefers-reduced-motion: reduce) {
-  .video-skeleton::after {
-    animation: none;
-    transform: none;
-    background: rgba(255, 255, 255, 0.05);
-  }
 }
 
 /* ---------- Play overlay ---------- */
